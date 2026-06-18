@@ -4,47 +4,55 @@
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  /* Primary palette — deep indigo */
-  --color-primary-50: #eef2ff;
-  --color-primary-100: #e0e7ff;
-  --color-primary-200: #c7d2fe;
-  --color-primary-300: #a5b4fc;
-  --color-primary-400: #818cf8;
-  --color-primary-500: #6366f1;
+  /* Primary palette — crisp indigo */
+  --color-primary-50: #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
   --color-primary-600: #4f46e5;
   --color-primary-700: #4338ca;
   --color-primary-800: #3730a3;
   --color-primary-900: #312e81;
 
-  /* Surface / Dark theme (used in dashboard) */
-  --color-surface-950: #020617;
-  --color-surface-900: #0f172a;
-  --color-surface-800: #1e293b;
-  --color-surface-700: #334155;
-  --color-surface-600: #475569;
-  --color-surface-500: #64748b;
-  --color-surface-400: #94a3b8;
-  --color-surface-300: #cbd5e1;
-  --color-surface-200: #e2e8f0;
-  --color-surface-100: #f1f5f9;
-  --color-surface-50: #f8fafc;
+  /* Surface / Light theme (used in dashboard) */
+  --color-surface-950: #f8fafc; /* Main background */
+  --color-surface-900: #ffffff; /* Card/Container Background */
+  --color-surface-800: #f1f5f9; /* Darker inputs / nested items */
+  --color-surface-700: #cbd5e1; /* Borders / Divider lines */
+  --color-surface-600: #94a3b8; /* Focus/Hover border */
+  --color-surface-500: #64748b; /* Muted text */
+  --color-surface-400: #475569; /* Semi-muted text */
+  --color-surface-300: #334155; /* Secondary text */
+  --color-surface-200: #1e293b; /* Primary text */
+  --color-surface-100: #0f172a; /* Title/Header text */
+  --color-surface-50: #0f172a;  /* Fallback text color */
 
   /* Light auth theme */
-  --color-auth-bg: #f5f3ff;
+  --color-auth-bg: #f8fafc;
   --color-auth-card: #ffffff;
-  --color-auth-border: #e8e5ff;
-  --color-auth-label: #374151;
-  --color-auth-input-bg: #fafafa;
-  --color-auth-input-border: #ddd6fe;
-  --color-auth-input-text: #1f2937;
-  --color-auth-muted: #6b7280;
+  --color-auth-border: #0f172a;
+  --color-auth-label: #0f172a;
+  --color-auth-input-bg: #ffffff;
+  --color-auth-input-border: #0f172a;
+  --color-auth-input-text: #0f172a;
+  --color-auth-muted: #475569;
 
   /* Event type colors */
-  --color-lecture: #3b82f6;
-  --color-exam: #ef4444;
-  --color-deadline: #f59e0b;
-  --color-success: #22c55e;
-  --color-info: #06b6d4;
+  --color-lecture: #2563eb;
+  --color-exam: #dc2626;
+  --color-deadline: #d97706;
+  --color-success: #16a34a;
+  --color-info: #0891b2;
+
+  /* Enforce Boxy design universally by zeroing border radius tokens */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
 }
 
 /* ===== Base Styles ===== */
@@ -70,82 +78,77 @@ body {
 
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-surface-950);
+  border-left: 1px solid var(--color-surface-700);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--color-surface-700);
-  border-radius: 9999px;
+  border: 2px solid var(--color-surface-950);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-surface-600);
 }
 
-/* ===== Dark Glassmorphism (Dashboard) ===== */
+/* ===== Boxy Neo-brutalist / Flat Containers ===== */
 .glass {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+  background: var(--color-surface-900);
+  border: 2px solid var(--color-surface-100);
+  box-shadow: 4px 4px 0px 0px var(--color-surface-100);
 }
 
 .glass-light {
-  background: rgba(30, 41, 59, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.08);
+  background: var(--color-surface-900);
+  border: 2px solid var(--color-surface-100);
+  box-shadow: 2px 2px 0px 0px var(--color-surface-100);
 }
 
-/* ===== Auth Page — Light Card ===== */
+/* ===== Auth Page — Boxy Light Card ===== */
 .auth-card {
   background: #ffffff;
-  border: 1px solid #ede9fe;
-  box-shadow:
-    0 1px 3px rgba(79, 70, 229, 0.04),
-    0 8px 32px rgba(79, 70, 229, 0.08),
-    0 32px 64px rgba(79, 70, 229, 0.06);
+  border: 2px solid var(--color-surface-100);
+  box-shadow: 6px 6px 0px 0px var(--color-surface-100);
 }
 
 .auth-input {
-  background: #fafafa;
-  border: 1.5px solid #ddd6fe;
-  color: #1f2937;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #ffffff;
+  border: 2px solid var(--color-surface-100);
+  color: var(--color-surface-100);
+  transition: transform 0.1s, box-shadow 0.1s;
 }
 .auth-input::placeholder {
-  color: #9ca3af;
-}
-.auth-input:hover {
-  border-color: #a5b4fc;
+  color: var(--color-surface-500);
 }
 .auth-input:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0px 0px var(--color-surface-100);
 }
 
-/* ===== Gradient Backgrounds ===== */
+/* ===== Premium Grid Background ===== */
 .gradient-bg {
-  background: linear-gradient(135deg, var(--color-surface-950) 0%, #0c1425 50%, #100a20 100%);
+  background-color: #f8fafc;
+  background-image: 
+    linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 .gradient-primary {
-  background: linear-gradient(135deg, var(--color-primary-600) 0%, #7c3aed 100%);
+  background: var(--color-primary-600);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-primary-600) 0%, #7c3aed 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-primary-600);
 }
 
-/* Auth panel gradient (left side) */
+/* Auth panel block color styling */
 .auth-panel {
-  background: linear-gradient(145deg, #4f46e5 0%, #6d28d9 40%, #7c3aed 70%, #8b5cf6 100%);
+  background: var(--color-primary-100);
+  border-right: 2px solid var(--color-surface-100);
   position: relative;
   overflow: hidden;
 }
@@ -157,7 +160,7 @@ body {
   right: -20%;
   width: 70%;
   height: 70%;
-  background: rgba(255,255,255,0.07);
+  background: rgba(79, 70, 229, 0.05);
   border-radius: 50%;
 }
 
@@ -168,7 +171,7 @@ body {
   left: -15%;
   width: 60%;
   height: 60%;
-  background: rgba(255,255,255,0.05);
+  background: rgba(79, 70, 229, 0.03);
   border-radius: 50%;
 }
 
@@ -255,21 +258,21 @@ body {
 
 /* ===== Event Type Badges ===== */
 .badge-lecture {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: #eff6ff;
+  color: #1e40af;
+  border: 2px solid #2563eb;
 }
 
 .badge-exam {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: #fef2f2;
+  color: #991b1b;
+  border: 2px solid #dc2626;
 }
 
 .badge-deadline {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: #fffbeb;
+  color: #854d0e;
+  border: 2px solid #d97706;
 }
 
 /* ===== Input Focus Ring (dark pages) ===== */

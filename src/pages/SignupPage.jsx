@@ -29,22 +29,15 @@ function PasswordStrength({ password }) {
   );
 }
 
-/* left panel illustration card */
 function StepCard({ num, title, desc }) {
   return (
-    <div
-      className="flex items-start gap-4 p-4 rounded-2xl"
-      style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
-    >
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-indigo-700 shrink-0"
-        style={{ background: 'rgba(255,255,255,0.9)' }}
-      >
+    <div className="flex items-start gap-4 p-4 rounded-none border-2 border-surface-100 bg-white shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
+      <div className="w-8 h-8 rounded-none border-2 border-surface-100 flex items-center justify-center text-sm font-bold text-white bg-primary-600 shrink-0 shadow-[1px_1px_0px_0px_var(--color-surface-100)]">
         {num}
       </div>
       <div>
-        <p className="text-white font-semibold text-sm">{title}</p>
-        <p className="text-white/60 text-xs mt-0.5 leading-relaxed">{desc}</p>
+        <p className="text-surface-100 font-bold text-sm">{title}</p>
+        <p className="text-surface-500 font-medium text-xs mt-0.5 leading-relaxed">{desc}</p>
       </div>
     </div>
   );
@@ -91,7 +84,7 @@ export default function SignupPage() {
   const passwordsMatch = confirmPassword && password === confirmPassword;
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#f5f3ff' }}>
+    <div className="min-h-screen flex gradient-bg">
 
       {/* ════════════════════════════════
           LEFT — brand panel
@@ -100,29 +93,26 @@ export default function SignupPage() {
 
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div
-            style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)' }}
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-          >
+          <div className="w-10 h-10 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center shadow-[3px_3px_0px_0px_var(--color-surface-100)]">
             <Calendar className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">FOSync</span>
+          <span className="text-xl font-bold text-surface-100 tracking-tight">FOSync</span>
         </div>
 
         {/* Hero copy */}
         <div className="space-y-6 relative z-10">
           <div>
-            <p className="text-white/60 text-sm font-medium uppercase tracking-widest mb-4">
+            <p className="text-surface-500 text-xs font-bold uppercase tracking-widest mb-4">
               Get started in minutes
             </p>
-            <h1 className="text-4xl font-bold text-white leading-tight">
+            <h1 className="text-4xl font-bold text-surface-100 leading-tight">
               Join your<br />
               department's<br />
-              <span style={{ color: 'rgba(196,181,253,1)' }}>calendar hub.</span>
+              <span className="text-primary-600">calendar hub.</span>
             </h1>
           </div>
 
-          <p className="text-white/60 text-base leading-relaxed max-w-xs">
+          <p className="text-surface-300 text-base font-medium leading-relaxed max-w-xs">
             Register with your student number, pick your electives, and your personalised schedule is ready instantly.
           </p>
 
@@ -147,7 +137,7 @@ export default function SignupPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-white/40 text-xs relative z-10">
+        <p className="text-surface-500 font-bold text-xs relative z-10">
           University of Colombo — Faculty of Science
         </p>
       </div>
@@ -155,34 +145,28 @@ export default function SignupPage() {
       {/* ════════════════════════════════
           RIGHT — form panel
           ════════════════════════════════ */}
-      <div
-        className="flex-1 flex flex-col items-center justify-center px-6 sm:px-12 py-10 overflow-y-auto"
-        style={{ background: '#ffffff' }}
-      >
+      <div className="flex-1 flex flex-col items-center justify-center px-6 sm:px-12 py-10 overflow-y-auto">
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2 mb-8">
-          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
+          <div className="w-9 h-9 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
             <Calendar className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-gray-900">FOSync</span>
+          <span className="text-xl font-bold text-surface-100">FOSync</span>
         </div>
 
-        <div className="w-full max-w-md animate-slide-in-right">
+        <div className="w-full max-w-md auth-card p-8 bg-white animate-slide-in-right">
 
           {/* Heading */}
           <div className="mb-7">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Create account</h2>
-            <p className="mt-2 text-gray-500 text-base">
+            <h2 className="text-3xl font-bold text-surface-100 tracking-tight">Create account</h2>
+            <p className="mt-2 text-surface-400 text-base font-medium">
               Fill in your details to get started
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <div
-              className="mb-5 px-4 py-3 rounded-xl text-sm animate-slide-down flex items-start gap-2"
-              style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#be123c' }}
-            >
+            <div className="mb-5 px-4 py-3 rounded-none text-sm font-semibold border-2 border-red-600 bg-red-50 text-red-600 animate-slide-down flex items-start gap-2">
               <span className="mt-0.5">⚠</span>
               <span>{error}</span>
             </div>
@@ -192,7 +176,7 @@ export default function SignupPage() {
 
             {/* Reg No */}
             <div className="space-y-1.5">
-              <label htmlFor="su-reg" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="su-reg" className="block text-sm font-bold text-surface-200">
                 Registration Number
               </label>
               <input
@@ -203,14 +187,14 @@ export default function SignupPage() {
                 value={regNo}
                 onChange={(e) => setRegNo(e.target.value)}
                 required
-                className="auth-input w-full px-4 py-3 rounded-xl text-sm"
+                className="auth-input w-full px-4 py-3 rounded-none text-sm font-semibold"
               />
-              <p className="text-xs text-gray-400">Format: YYYYsXXXXX</p>
+              <p className="text-xs text-surface-500 font-medium">Format: YYYYsXXXXX</p>
             </div>
 
             {/* Full Name */}
             <div className="space-y-1.5">
-              <label htmlFor="su-name" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="su-name" className="block text-sm font-bold text-surface-200">
                 Full Name
               </label>
               <input
@@ -221,13 +205,13 @@ export default function SignupPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="auth-input w-full px-4 py-3 rounded-xl text-sm"
+                className="auth-input w-full px-4 py-3 rounded-none text-sm font-semibold"
               />
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="su-pw" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="su-pw" className="block text-sm font-bold text-surface-200">
                 Password
               </label>
               <div className="relative">
@@ -239,12 +223,12 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="auth-input w-full px-4 py-3 pr-12 rounded-xl text-sm"
+                  className="auth-input w-full px-4 py-3 pr-12 rounded-none text-sm font-semibold"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-100 transition-colors cursor-pointer"
                   tabIndex={-1}
                 >
                   {showPw ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
@@ -255,7 +239,7 @@ export default function SignupPage() {
 
             {/* Confirm Password */}
             <div className="space-y-1.5">
-              <label htmlFor="su-confirm" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="su-confirm" className="block text-sm font-bold text-surface-200">
                 Confirm Password
               </label>
               <div className="relative">
@@ -267,14 +251,15 @@ export default function SignupPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="auth-input w-full px-4 py-3 pr-12 rounded-xl text-sm"
+                  className="auth-input w-full px-4 py-3 pr-12 rounded-none text-sm font-semibold"
                   style={
                     confirmPassword
                       ? {
-                          borderColor: passwordsMatch ? '#10b981' : '#f43f5e',
+                          borderColor: passwordsMatch ? '#16a34a' : '#dc2626',
+                          transform: 'translate(-1px, -1px)',
                           boxShadow: passwordsMatch
-                            ? '0 0 0 3px rgba(16,185,129,0.1)'
-                            : '0 0 0 3px rgba(244,63,94,0.08)',
+                            ? '2px 2px 0px 0px var(--color-surface-100)'
+                            : '2px 2px 0px 0px #dc2626',
                         }
                       : undefined
                   }
@@ -282,17 +267,17 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirm((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-100 transition-colors cursor-pointer"
                   tabIndex={-1}
                 >
                   {showConfirm ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
                 </button>
               </div>
               {confirmPassword && !passwordsMatch && (
-                <p className="text-xs text-rose-500 animate-slide-down">Passwords don't match</p>
+                <p className="text-xs text-red-600 font-semibold animate-slide-down">Passwords don't match</p>
               )}
               {passwordsMatch && (
-                <p className="text-xs text-emerald-600 animate-slide-down flex items-center gap-1">
+                <p className="text-xs text-emerald-600 font-semibold animate-slide-down flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Passwords match
                 </p>
               )}
@@ -304,19 +289,15 @@ export default function SignupPage() {
               disabled={loading}
               className="
                 w-full flex items-center justify-center gap-2 mt-2
-                py-3.5 rounded-xl text-sm font-semibold text-white
-                transition-all duration-200
-                hover:shadow-lg hover:shadow-indigo-500/25
-                hover:-translate-y-0.5
-                active:translate-y-0
-                disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0
+                py-3.5 rounded-none text-sm font-bold text-white
+                transition-all duration-100
+                bg-primary-600 border-2 border-surface-100
+                shadow-[3px_3px_0px_0px_var(--color-surface-100)]
+                hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
+                active:translate-x-[3px] active:translate-y-[3px] active:shadow-none
+                disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none
                 cursor-pointer
               "
-              style={{
-                background: loading
-                  ? '#818cf8'
-                  : 'linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%)',
-              }}
             >
               {loading ? (
                 <>
@@ -338,10 +319,10 @@ export default function SignupPage() {
           {/* Sign-in link */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t" style={{ borderColor: '#f0edff' }} />
+              <div className="w-full border-t-2 border-surface-700" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-xs text-gray-400">
+              <span className="px-3 bg-white text-xs text-surface-500 font-bold">
                 Already have an account?
               </span>
             </div>
@@ -351,18 +332,19 @@ export default function SignupPage() {
             to="/login"
             className="
               w-full flex items-center justify-center gap-2
-              py-3 rounded-xl text-sm font-semibold
-              border-2 transition-all duration-200
-              hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50
-              hover:-translate-y-0.5
+              py-3 rounded-none text-sm font-bold bg-surface-900
+              border-2 border-surface-100 text-surface-100
+              shadow-[3px_3px_0px_0px_var(--color-surface-100)]
+              hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
+              active:translate-x-[3px] active:translate-y-[3px] active:shadow-none
+              transition-all duration-100
               cursor-pointer
             "
-            style={{ borderColor: '#ddd6fe', color: '#4f46e5', background: 'transparent' }}
           >
             Sign in instead
           </Link>
 
-          <p className="text-center text-xs text-gray-400 mt-6">
+          <p className="text-center text-xs text-surface-500 font-bold mt-6">
             Only approved students on the whitelist can register.
           </p>
         </div>

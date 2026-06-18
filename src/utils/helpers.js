@@ -52,9 +52,9 @@ export function getEventTypeClass(type) {
 // Get event type colors for calendar rendering
 export function getEventTypeColor(type) {
   const map = {
-    lecture: { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.4)', text: '#60a5fa' },
-    exam: { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)', text: '#f87171' },
-    deadline: { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)', text: '#fbbf24' },
+    lecture: { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
+    exam: { bg: '#fef2f2', border: '#dc2626', text: '#991b1b' },
+    deadline: { bg: '#fffbeb', border: '#d97706', text: '#854d0e' },
   };
   return map[type] || map.lecture;
 }

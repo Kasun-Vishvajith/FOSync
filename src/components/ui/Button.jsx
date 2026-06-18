@@ -1,10 +1,10 @@
 import { Loader2 } from 'lucide-react';
 
 const variants = {
-  primary: 'bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-600/20',
-  secondary: 'bg-surface-700 hover:bg-surface-600 text-surface-100 border border-surface-600',
-  danger: 'bg-red-600/80 hover:bg-red-600 text-white',
-  ghost: 'bg-transparent hover:bg-surface-800 text-surface-300 hover:text-surface-100',
+  primary: 'bg-primary-600 text-white border-2 border-surface-100 shadow-[3px_3px_0px_0px_var(--color-surface-100)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none',
+  secondary: 'bg-surface-900 text-surface-100 border-2 border-surface-100 shadow-[3px_3px_0px_0px_var(--color-surface-100)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none',
+  danger: 'bg-red-600 text-white border-2 border-surface-100 shadow-[3px_3px_0px_0px_var(--color-surface-100)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none',
+  ghost: 'bg-transparent text-surface-300 hover:text-surface-100 hover:bg-surface-800 border-2 border-transparent',
 };
 
 const sizes = {
@@ -25,10 +25,9 @@ export default function Button({
   return (
     <button
       className={`
-        inline-flex items-center justify-center gap-2 font-medium rounded-lg
-        transition-all duration-200 ease-out cursor-pointer
-        hover:scale-[1.02] active:scale-[0.98]
-        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+        inline-flex items-center justify-center gap-2 font-semibold rounded-none
+        transition-all duration-100 cursor-pointer
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none
         ${variants[variant]} ${sizes[size]} ${className}
       `}
       disabled={disabled || loading}

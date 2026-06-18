@@ -26,7 +26,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-black/40 backdrop-blur-xs animate-fade-in"
         onClick={onClose}
       />
 
@@ -34,17 +34,17 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       <div
         className={`
           relative w-full ${sizeClasses[size]}
-          glass rounded-2xl shadow-2xl
+          glass rounded-none shadow-[6px_6px_0px_0px_var(--color-surface-100)]
           animate-scale-in
           max-h-[85vh] flex flex-col
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-surface-700/50">
-          <h2 className="text-lg font-semibold text-surface-100">{title}</h2>
+        <div className="flex items-center justify-between p-5 border-b-2 border-surface-100">
+          <h2 className="text-lg font-bold text-surface-100">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors cursor-pointer"
+            className="p-1.5 rounded-none border-2 border-surface-100 hover:bg-surface-800 text-surface-200 hover:text-surface-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

@@ -7,17 +7,10 @@ import { ArrowRight, Calendar, BookOpen, Users, Bell, Eye, EyeOff } from 'lucide
 function Feature({ icon: Icon, text }) {
   return (
     <div className="flex items-center gap-3">
-      <div
-        style={{
-          background: 'rgba(255,255,255,0.15)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255,255,255,0.2)',
-        }}
-        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-      >
-        <Icon className="w-4 h-4 text-white" />
+      <div className="w-8 h-8 rounded-none border-2 border-surface-100 bg-white flex items-center justify-center shrink-0 shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
+        <Icon className="w-4 h-4 text-surface-100" />
       </div>
-      <span className="text-white/80 text-sm">{text}</span>
+      <span className="text-surface-100 font-semibold text-sm">{text}</span>
     </div>
   );
 }
@@ -57,39 +50,35 @@ export default function LoginPage() {
   }
 
   return (
-    /* full-viewport white base */
-    <div className="min-h-screen flex" style={{ background: '#f5f3ff' }}>
+    <div className="min-h-screen flex gradient-bg">
 
       {/* ════════════════════════════════
-          LEFT — gradient brand panel
+          LEFT — brand panel
           ════════════════════════════════ */}
       <div className="auth-panel hidden lg:flex flex-col justify-between w-[44%] p-12">
 
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div
-            style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)' }}
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-          >
+          <div className="w-10 h-10 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center shadow-[3px_3px_0px_0px_var(--color-surface-100)]">
             <Calendar className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">FOSync</span>
+          <span className="text-xl font-bold text-surface-100 tracking-tight">FOSync</span>
         </div>
 
         {/* Hero copy */}
         <div className="space-y-6 relative z-10">
           <div>
-            <p className="text-white/60 text-sm font-medium uppercase tracking-widest mb-4">
+            <p className="text-surface-500 text-xs font-bold uppercase tracking-widest mb-4">
               University of Colombo · Faculty of Science
             </p>
-            <h1 className="text-4xl font-bold text-white leading-tight">
+            <h1 className="text-4xl font-bold text-surface-100 leading-tight">
               Your academic<br />
               schedule,<br />
-              <span style={{ color: 'rgba(196,181,253,1)' }}>beautifully organised.</span>
+              <span className="text-primary-600">beautifully organised.</span>
             </h1>
           </div>
 
-          <p className="text-white/60 text-base leading-relaxed max-w-xs">
+          <p className="text-surface-300 text-base font-medium leading-relaxed max-w-xs">
             One place to track every lecture, exam, and deadline — personalised to your degree and electives.
           </p>
 
@@ -103,57 +92,41 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom quote */}
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.1)',
-            border: '1px solid rgba(255,255,255,0.15)',
-          }}
-          className="rounded-2xl p-5 relative z-10"
-        >
-          <p className="text-white/80 text-sm italic leading-relaxed">
+        <div className="glass-light p-5 relative z-10">
+          <p className="text-surface-200 text-sm italic font-medium leading-relaxed">
             "Organised students perform better. FOSync helps you stay one step ahead."
           </p>
-          <p className="text-white/50 text-xs mt-2">Department of Statistics</p>
+          <p className="text-surface-500 text-xs font-bold mt-2">Department of Statistics</p>
         </div>
       </div>
 
       {/* ════════════════════════════════
-          RIGHT — white form panel
+          RIGHT — form panel
           ════════════════════════════════ */}
-      <div
-        className="flex-1 flex flex-col items-center justify-center px-6 sm:px-12 py-12"
-        style={{ background: '#ffffff' }}
-      >
+      <div className="flex-1 flex flex-col items-center justify-center px-6 sm:px-12 py-12">
         {/* Mobile-only logo */}
         <div className="lg:hidden flex items-center gap-2 mb-8">
-          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
+          <div className="w-9 h-9 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
             <Calendar className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-gray-900">FOSync</span>
+          <span className="text-xl font-bold text-surface-100">FOSync</span>
         </div>
 
-        <div className="w-full max-w-md animate-slide-in-right">
+        <div className="w-full max-w-md auth-card p-8 bg-white animate-slide-in-right">
 
           {/* Heading */}
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
+            <h2 className="text-3xl font-bold text-surface-100 tracking-tight">
               Welcome back
             </h2>
-            <p className="mt-2 text-gray-500 text-base">
+            <p className="mt-2 text-surface-400 text-base font-medium">
               Sign in to your student account
             </p>
           </div>
 
           {/* Error alert */}
           {error && (
-            <div
-              className="mb-6 px-4 py-3 rounded-xl text-sm animate-slide-down flex items-start gap-2"
-              style={{
-                background: '#fff1f2',
-                border: '1px solid #fecdd3',
-                color: '#be123c',
-              }}
-            >
+            <div className="mb-6 px-4 py-3 rounded-none text-sm font-semibold border-2 border-red-600 bg-red-50 text-red-600 animate-slide-down flex items-start gap-2">
               <span className="mt-0.5">⚠</span>
               <span>{error}</span>
             </div>
@@ -164,7 +137,7 @@ export default function LoginPage() {
 
             {/* Reg No */}
             <div className="space-y-1.5">
-              <label htmlFor="login-reg" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="login-reg" className="block text-sm font-bold text-surface-200">
                 Registration Number
               </label>
               <input
@@ -175,14 +148,14 @@ export default function LoginPage() {
                 value={regNo}
                 onChange={(e) => setRegNo(e.target.value)}
                 required
-                className="auth-input w-full px-4 py-3 rounded-xl text-sm"
+                className="auth-input w-full px-4 py-3 rounded-none text-sm font-semibold"
               />
-              <p className="text-xs text-gray-400">Format: YYYYsXXXXX</p>
+              <p className="text-xs text-surface-500 font-medium">Format: YYYYsXXXXX</p>
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="login-pw" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="login-pw" className="block text-sm font-bold text-surface-200">
                 Password
               </label>
               <div className="relative">
@@ -194,12 +167,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="auth-input w-full px-4 py-3 pr-12 rounded-xl text-sm"
+                  className="auth-input w-full px-4 py-3 pr-12 rounded-none text-sm font-semibold"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-100 transition-colors cursor-pointer"
                   tabIndex={-1}
                 >
                   {showPw ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
@@ -213,19 +186,15 @@ export default function LoginPage() {
               disabled={loading}
               className="
                 w-full flex items-center justify-center gap-2
-                py-3.5 rounded-xl text-sm font-semibold text-white
-                transition-all duration-200
-                hover:shadow-lg hover:shadow-indigo-500/25
-                hover:-translate-y-0.5
-                active:translate-y-0
-                disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0
+                py-3.5 rounded-none text-sm font-bold text-white
+                transition-all duration-100
+                bg-primary-600 border-2 border-surface-100
+                shadow-[3px_3px_0px_0px_var(--color-surface-100)]
+                hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
+                active:translate-x-[3px] active:translate-y-[3px] active:shadow-none
+                disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none
                 cursor-pointer
               "
-              style={{
-                background: loading
-                  ? '#818cf8'
-                  : 'linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%)',
-              }}
             >
               {loading ? (
                 <>
@@ -247,10 +216,10 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t" style={{ borderColor: '#f0edff' }} />
+              <div className="w-full border-t-2 border-surface-700" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-xs text-gray-400">
+              <span className="px-3 bg-white text-xs text-surface-500 font-bold">
                 New to FOSync?
               </span>
             </div>
@@ -261,19 +230,20 @@ export default function LoginPage() {
             to="/signup"
             className="
               w-full flex items-center justify-center gap-2
-              py-3 rounded-xl text-sm font-semibold
-              border-2 transition-all duration-200
-              hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50
-              hover:-translate-y-0.5
+              py-3 rounded-none text-sm font-bold bg-surface-900
+              border-2 border-surface-100 text-surface-100
+              shadow-[3px_3px_0px_0px_var(--color-surface-100)]
+              hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
+              active:translate-x-[3px] active:translate-y-[3px] active:shadow-none
+              transition-all duration-100
               cursor-pointer
             "
-            style={{ borderColor: '#ddd6fe', color: '#4f46e5', background: 'transparent' }}
           >
             Create an account
           </Link>
 
           {/* Footer note */}
-          <p className="text-center text-xs text-gray-400 mt-8">
+          <p className="text-center text-xs text-surface-500 font-bold mt-8">
             Only approved FOS students can register.
           </p>
         </div>

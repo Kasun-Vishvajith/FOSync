@@ -9,7 +9,7 @@ const Input = forwardRef(function Input(
       {label && (
         <label
           htmlFor={id}
-          className="block text-sm font-medium text-surface-300"
+          className="block text-sm font-semibold text-surface-200"
         >
           {label}
         </label>
@@ -18,19 +18,18 @@ const Input = forwardRef(function Input(
         ref={ref}
         id={id}
         className={`
-          w-full px-3.5 py-2.5 rounded-lg
-          bg-surface-800/80 border border-surface-700
+          w-full px-3.5 py-2.5 rounded-none
+          bg-surface-900 border-2 border-surface-100
           text-surface-100 placeholder:text-surface-500
-          transition-all duration-200
-          hover:border-surface-600
-          focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20
-          ${error ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/20' : ''}
+          transition-all duration-100
+          focus:outline-none focus:translate-x-[-1px] focus:translate-y-[-1px] focus:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
+          ${error ? 'border-red-600 focus:shadow-[2px_2px_0px_0px_#dc2626]' : ''}
           ${className}
         `}
         {...props}
       />
       {error && (
-        <p className="text-sm text-red-400 animate-slide-down">{error}</p>
+        <p className="text-sm font-semibold text-red-600 animate-slide-down">{error}</p>
       )}
     </div>
   );
