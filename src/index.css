@@ -3,49 +3,49 @@
 /* ===== Base / Dark Theme ===== */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-serif: 'Outfit', ui-serif, Georgia, serif;
+  --font-serif: 'Lora', ui-serif, Georgia, serif;
 
-  /* Base Primary - Antigravity Default (Glowing Purple/Indigo mix) */
-  --color-primary-50: #eef2ff;
-  --color-primary-100: #e0e7ff;
-  --color-primary-200: #c7d2fe;
-  --color-primary-300: #a5b4fc;
-  --color-primary-400: #818cf8;
-  --color-primary-500: #6366f1;
-  --color-primary-600: #4f46e5;
-  --color-primary-700: #4338ca;
-  --color-primary-800: #3730a3;
-  --color-primary-900: #312e81;
+  /* Base Primary - Warm Neutral Default */
+  --color-primary-50: #f9f9f8;
+  --color-primary-100: #f3f3ee;
+  --color-primary-200: #e5e5e0;
+  --color-primary-300: #d4d4cf;
+  --color-primary-400: #a3a39e;
+  --color-primary-500: #73736e;
+  --color-primary-600: #52524e;
+  --color-primary-700: #333330;
+  --color-primary-800: #1a1a18;
+  --color-primary-900: #0d0d0c;
 
-  /* Sleek Dark Mode Surface Colors */
-  --color-surface-950: #020617; /* Slate 950 - Deepest background */
-  --color-surface-900: #0f172a; /* Slate 900 - Cards/Containers */
-  --color-surface-800: #1e293b; /* Slate 800 - Borders, Hover states */
-  --color-surface-700: #334155; /* Slate 700 - Lighter borders */
-  --color-surface-600: #475569; /* Slate 600 */
-  --color-surface-500: #64748b; /* Slate 500 - Muted text */
-  --color-surface-400: #94a3b8; /* Slate 400 - Secondary text */
-  --color-surface-300: #cbd5e1; /* Slate 300 - Secondary bright */
-  --color-surface-200: #e2e8f0; /* Slate 200 - Primary text */
-  --color-surface-100: #f1f5f9; /* Slate 100 - Brightest text/Titles */
-  --color-surface-50:  #f8fafc; /* Slate 50 */
+  /* Claude-inspired Light Mode Surface Colors */
+  --color-surface-950: #fdfcfb; /* Main background - very soft off-white/beige */
+  --color-surface-900: #ffffff; /* Cards/Containers - pure white */
+  --color-surface-800: #f3f3f0; /* Subtle card backgrounds / active */
+  --color-surface-700: #e5e5e0; /* Subtle borders / dividers */
+  --color-surface-600: #d4d4cd; /* Stronger borders / disabled */
+  --color-surface-500: #a3a39d; /* Muted text */
+  --color-surface-400: #73736d; /* Secondary text */
+  --color-surface-300: #52524d; /* Dark secondary text */
+  --color-surface-200: #333330; /* Primary text */
+  --color-surface-100: #1c1c1b; /* Brightest text/Titles (nearly black) */
+  --color-surface-50:  #0a0a0a; /* Pure black text */
 
   /* Auth theme */
-  --color-auth-bg: #020617;
-  --color-auth-card: rgba(15, 23, 42, 0.7);
-  --color-auth-border: #1e293b;
-  --color-auth-label: #cbd5e1;
-  --color-auth-input-bg: rgba(2, 6, 23, 0.5);
-  --color-auth-input-border: #334155;
-  --color-auth-input-text: #f1f5f9;
-  --color-auth-muted: #94a3b8;
+  --color-auth-bg: #fdfcfb;
+  --color-auth-card: rgba(255, 255, 255, 0.9);
+  --color-auth-border: #e5e5e0;
+  --color-auth-label: #52524d;
+  --color-auth-input-bg: rgba(255, 255, 255, 0.7);
+  --color-auth-input-border: #d4d4cd;
+  --color-auth-input-text: #1c1c1b;
+  --color-auth-muted: #73736d;
 
-  /* Event type colors - Vibrant for dark mode */
-  --color-lecture: #38bdf8; /* Bright Sky Blue */
-  --color-exam: #fb7185;    /* Bright Rose/Red */
-  --color-deadline: #fbbf24; /* Bright Amber */
-  --color-success: #34d399;  /* Bright Emerald */
-  --color-info: #2dd4bf;     /* Bright Teal */
+  /* Event type colors - Softer for light mode */
+  --color-lecture: #0284c7; /* Sky Blue */
+  --color-exam: #e11d48;    /* Rose/Red */
+  --color-deadline: #d97706; /* Amber */
+  --color-success: #059669;  /* Emerald */
+  --color-info: #0d9488;     /* Teal */
 }
 
 /* ===== Degree Specific Themes ===== */
@@ -115,7 +115,9 @@ html {
 body {
   font-family: var(--font-sans);
   background-color: var(--color-surface-950);
-  color: var(--color-surface-200); /* Slightly muted white for primary text */
+  background-image: none; /* Claude minimal look */
+  background-attachment: fixed;
+  color: var(--color-surface-200); /* Dark text for primary text */
   min-height: 100vh;
   line-height: 1.6;
 }
@@ -142,37 +144,37 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ===== Glassmorphism Containers ===== */
 .glass {
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
 }
 
 .glass-light {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
 }
 
 /* ===== Auth Page — Elegant Card ===== */
 .auth-card {
-  background: var(--color-auth-card);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.5rem;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255,255,255,0.5);
 }
 
 .auth-input {
   background: var(--color-auth-input-bg);
-  border: 1.5px solid var(--color-auth-input-border);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-auth-input-border);
+  border-radius: 0.25rem;
   color: var(--color-auth-input-text);
   transition: all 0.2s ease;
 }
@@ -181,9 +183,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 .auth-input:focus {
   outline: none;
-  border-color: var(--color-primary-500);
-  background: rgba(15, 23, 42, 0.8);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  border-color: var(--color-surface-400);
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
 }
 
 /* ===== Elegant Background ===== */
@@ -216,9 +218,9 @@ h1, h2, h3, h4, h5, h6 {
   right: -10%;
   width: 60%;
   height: 60%;
-  background: var(--color-primary-600);
+  background: #fcd34d; /* Warm amber pastel glow */
   border-radius: 50%;
-  filter: blur(120px);
+  filter: blur(140px);
   opacity: 0.15;
 }
 
@@ -229,10 +231,10 @@ h1, h2, h3, h4, h5, h6 {
   left: -10%;
   width: 50%;
   height: 50%;
-  background: var(--color-primary-500);
+  background: #e9d5ff; /* Soft purple pastel glow */
   border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.1;
+  filter: blur(120px);
+  opacity: 0.2;
 }
 
 /* Typography Classes */

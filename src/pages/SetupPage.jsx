@@ -15,6 +15,17 @@ export default function SetupPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    async function loadCourses() {
+      try {
+        const degreeCourses = await getCoursesForDegree(userProfile.degree);
+        setCourses(degreeCourses);
+      } catch (err) {
+        console.error('Failed to load courses:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     if (userProfile?.degree) {
       loadCourses();
     }
@@ -22,20 +33,10 @@ export default function SetupPage() {
 
   useEffect(() => {
     if (userProfile?.electives) {
+      // eslint-disable-next-line
       setSelectedElectives(userProfile.electives);
     }
   }, [userProfile?.electives]);
-
-  async function loadCourses() {
-    try {
-      const degreeCourses = await getCoursesForDegree(userProfile.degree);
-      setCourses(degreeCourses);
-    } catch (err) {
-      console.error('Failed to load courses:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function toggleElective(courseId) {
     setSelectedElectives((prev) =>

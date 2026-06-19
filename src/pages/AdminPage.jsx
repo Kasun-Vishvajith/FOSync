@@ -10,11 +10,11 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Modal from '../components/ui/Modal';
-import { DEGREES, EVENT_TYPES, ROLES } from '../utils/constants';
+import { DEGREES, EVENT_TYPES } from '../utils/constants';
 import { capitalize, formatDate } from '../utils/helpers';
 import {
   Shield, CalendarPlus, BookOpen, Users, UserCheck,
-  Plus, Trash2, Edit3, Upload, Search, X, AlertTriangle,
+  Plus, Trash2, Edit3, Upload, Search, X,
 } from 'lucide-react';
 
 // =============================================

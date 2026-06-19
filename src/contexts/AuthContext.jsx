@@ -10,10 +10,11 @@ import {
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { getUserProfile, createUserProfile, getAllowedUser, getUserByRegNo } from '../lib/firestore';
-import { regNoToEmail, validateRegNo } from '../utils/helpers';
+import { regNoToEmail } from '../utils/helpers';
 
 const AuthContext = createContext(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');

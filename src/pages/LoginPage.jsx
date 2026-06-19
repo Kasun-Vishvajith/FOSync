@@ -48,7 +48,7 @@ export default function LoginPage() {
           ════════════════════════════════ */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 sm:px-16 h-screen overflow-hidden">
 
-        <div className="w-full max-w-md auth-card p-8 sm:p-10 bg-white animate-slide-in-right">
+        <div className="w-full max-w-md auth-card p-8 sm:p-10 animate-slide-in-right">
           
           {/* Typography Logo */}
           <div className="flex justify-center mb-6">
@@ -174,7 +174,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-surface-700" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-xs text-surface-500 font-medium">
+              <span className="px-3 bg-transparent text-xs text-surface-500 font-medium">
                 New to FOSync?
               </span>
             </div>

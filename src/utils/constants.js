@@ -2,6 +2,8 @@
 export const DEGREES = [
   'Statistics',
   'Data Science',
+  'Applied Statistics',
+  'Industrial Statistics',
 ];
 
 // Event types

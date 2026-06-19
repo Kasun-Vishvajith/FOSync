@@ -8,7 +8,7 @@ import {
 import { getEventTypeColor } from '../../utils/helpers';
 import { TIME_SLOTS } from '../../utils/constants';
 
-export default function WeekView({ currentDate, events, courseMap, onEventClick }) {
+export default function WeekView({ currentDate, events, onEventClick }) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 

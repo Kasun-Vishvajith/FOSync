@@ -30,35 +30,35 @@ export default function DashboardPage() {
 
   // Load courses and events
   useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        // Get all courses for user's degree
+        const degreeCourses = await getCoursesForDegree(userProfile.degree);
+        setCourses(degreeCourses);
+
+        // Filter: core courses + user's selected electives
+        const relevantCourseIds = degreeCourses
+          .filter((c) => !c.is_elective || userProfile.electives?.includes(c.course_id))
+          .map((c) => c.course_id);
+
+        if (relevantCourseIds.length > 0) {
+          const allEvents = await getEventsForCourses(relevantCourseIds);
+          setEvents(allEvents);
+        } else {
+          setEvents([]);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     if (userProfile?.degree) {
       loadData();
     }
   }, [userProfile?.degree, userProfile?.electives]);
-
-  async function loadData() {
-    setLoading(true);
-    try {
-      // Get all courses for user's degree
-      const degreeCourses = await getCoursesForDegree(userProfile.degree);
-      setCourses(degreeCourses);
-
-      // Filter: core courses + user's selected electives
-      const relevantCourseIds = degreeCourses
-        .filter((c) => !c.is_elective || userProfile.electives?.includes(c.course_id))
-        .map((c) => c.course_id);
-
-      if (relevantCourseIds.length > 0) {
-        const allEvents = await getEventsForCourses(relevantCourseIds);
-        setEvents(allEvents);
-      } else {
-        setEvents([]);
-      }
-    } catch (err) {
-      console.error('Failed to load dashboard data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   // Navigation
   function goToday() {

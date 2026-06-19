@@ -38,11 +38,7 @@ export default function App() {
             />
           </Route>
           
-          <Route path="/init-admin" element={
-            <ProtectedRoute>
-              <AdminSetupPage />
-            </ProtectedRoute>
-          } />
+          <Route path="/init-admin" element={<AdminSetupPage />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/login" replace />} />
