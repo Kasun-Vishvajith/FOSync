@@ -11,6 +11,8 @@ import {
   orderBy,
   addDoc,
   Timestamp,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -107,6 +109,10 @@ export async function addCourse(courseId, data) {
     aliases: data.aliases || [],
     degrees: data.degrees || [],
     is_elective: data.is_elective || false,
+    semester: data.semester || '',
+    credits: data.credits || 0,
+    year: data.year || '',
+    linked_courses: data.linked_courses || [],
   });
 }
 
@@ -118,6 +124,22 @@ export async function deleteCourse(courseId) {
   await deleteDoc(doc(db, 'courses', courseId));
 }
 
+export async function bulkAddCourses(coursesData) {
+  const promises = coursesData.map(c => 
+    setDoc(doc(db, 'courses', c.course_id), {
+      course_id: c.course_id,
+      aliases: c.aliases || [],
+      degrees: c.degrees || [],
+      is_elective: c.is_elective || false,
+      semester: c.semester || '',
+      credits: c.credits || 0,
+      year: c.year || '',
+      linked_courses: c.linked_courses || [],
+    })
+  );
+  await Promise.all(promises);
+}
+
 export async function getCoursesForDegree(degree) {
   const q = query(
     collection(db, 'courses'),
@@ -125,6 +147,31 @@ export async function getCoursesForDegree(degree) {
   );
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function linkCourses(courseIdA, courseIdB) {
+  if (courseIdA === courseIdB) return;
+  const refA = doc(db, 'courses', courseIdA);
+  const refB = doc(db, 'courses', courseIdB);
+
+  await updateDoc(refA, {
+    linked_courses: arrayUnion(courseIdB)
+  });
+  await updateDoc(refB, {
+    linked_courses: arrayUnion(courseIdA)
+  });
+}
+
+export async function unlinkCourses(courseIdA, courseIdB) {
+  const refA = doc(db, 'courses', courseIdA);
+  const refB = doc(db, 'courses', courseIdB);
+
+  await updateDoc(refA, {
+    linked_courses: arrayRemove(courseIdB)
+  });
+  await updateDoc(refB, {
+    linked_courses: arrayRemove(courseIdA)
+  });
 }
 
 // ========================

@@ -9,7 +9,7 @@ const Input = forwardRef(function Input(
       {label && (
         <label
           htmlFor={id}
-          className="block text-sm font-medium text-surface-200"
+          className="block text-sm font-medium text-[var(--color-text-primary)]"
         >
           {label}
         </label>
@@ -18,18 +18,19 @@ const Input = forwardRef(function Input(
         ref={ref}
         id={id}
         className={`
-          w-full px-3.5 py-2.5 rounded-xl
-          bg-surface-900 border border-surface-700
-          text-surface-100 placeholder:text-surface-500
-          transition-all duration-200 shadow-sm
-          focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-600/10
-          ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : ''}
+          w-full px-3.5 py-2.5 rounded-[var(--radius-md)]
+          bg-[var(--color-surface)] border border-[var(--color-border)]
+          text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]
+          transition-all duration-200 shadow-[var(--shadow-soft)]
+          focus:outline-none focus:border-[var(--color-accent)] focus:ring-[3px] focus:ring-[var(--color-accent-subtle)]
+          hover:bg-[var(--color-surface-hover)]
+          ${error ? 'border-[#da1e28] focus:border-[#da1e28] focus:ring-[#da1e28]/10' : ''}
           ${className}
         `}
         {...props}
       />
       {error && (
-        <p className="text-sm font-semibold text-red-600 animate-slide-down">{error}</p>
+        <p className="text-sm font-medium text-[#da1e28] animate-slide-down">{error}</p>
       )}
     </div>
   );

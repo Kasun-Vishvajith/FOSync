@@ -17,7 +17,7 @@ export default function CalendarHeader({
       : `Week of ${format(currentDate, 'MMM d, yyyy')}`;
 
   return (
-    <div className="glass rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm rounded-xl p-2 sm:p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
       {/* Left: Navigation */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={onPrev}>
@@ -30,38 +30,32 @@ export default function CalendarHeader({
         <Button variant="ghost" size="sm" onClick={onNext}>
           <ChevronRight className="w-4 h-4" />
         </Button>
-        <h2 className="text-lg font-semibold text-surface-100 ml-2">
+        <h2 className="text-lg font-bold text-[var(--color-text-primary)] ml-2">
           {title}
         </h2>
       </div>
 
       {/* Right: View Toggle */}
-      <div className="flex items-center gap-1 p-1 rounded-lg bg-surface-800 border border-surface-700">
-        <button
-          onClick={() => onViewChange(CALENDAR_VIEWS.WEEK)}
-          className={`
-            px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer
-            ${
-              view === CALENDAR_VIEWS.WEEK
-                ? 'bg-primary-600 text-white shadow-md'
-                : 'text-surface-400 hover:text-surface-200'
-            }
-          `}
-        >
-          Week
-        </button>
+      <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]">
         <button
           onClick={() => onViewChange(CALENDAR_VIEWS.MONTH)}
-          className={`
-            px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer
-            ${
-              view === CALENDAR_VIEWS.MONTH
-                ? 'bg-primary-600 text-white shadow-md'
-                : 'text-surface-400 hover:text-surface-200'
-            }
-          `}
+          className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+            view === CALENDAR_VIEWS.MONTH
+              ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-sm'
+              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+          }`}
         >
           Month
+        </button>
+        <button
+          onClick={() => onViewChange(CALENDAR_VIEWS.WEEK)}
+          className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+            view === CALENDAR_VIEWS.WEEK
+              ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-sm'
+              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+          }`}
+        >
+          Week
         </button>
       </div>
     </div>

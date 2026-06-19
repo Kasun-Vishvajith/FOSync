@@ -8,9 +8,9 @@ import {
   isSameMonth,
   isToday,
 } from 'date-fns';
-import { getEventTypeColor } from '../../utils/helpers';
+import { getDegreeColor } from '../../utils/helpers';
 
-export default function MonthView({ currentDate, events, courseMap, onEventClick }) {
+export default function MonthView({ currentDate, events, courseMap, onEventClick, onDayClick }) {
   // Build calendar grid (weeks x 7 days)
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -31,17 +31,23 @@ export default function MonthView({ currentDate, events, courseMap, onEventClick
   const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
-    <div className="glass rounded-xl overflow-hidden">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-[var(--shadow-soft)] overflow-hidden">
       {/* Day Headers */}
-      <div className="grid grid-cols-7 border-b border-surface-700/50">
-        {dayHeaders.map((day) => (
-          <div
-            key={day}
-            className="py-3 text-center text-xs font-semibold text-surface-400 uppercase tracking-wider"
-          >
-            {day}
-          </div>
-        ))}
+      <div className="grid grid-cols-7 border-b border-[var(--color-border)]">
+        {dayHeaders.map((day) => {
+          let textColor = "text-[var(--color-text-secondary)]";
+          if (day === 'Sat') textColor = "text-red-400";
+          if (day === 'Sun') textColor = "text-red-600";
+          
+          return (
+            <div
+              key={day}
+              className={`py-3 text-center text-xs font-semibold ${textColor} uppercase tracking-wider bg-[var(--color-bg-base)]`}
+            >
+              {day}
+            </div>
+          );
+        })}
       </div>
 
       {/* Calendar Grid */}
@@ -51,25 +57,32 @@ export default function MonthView({ currentDate, events, courseMap, onEventClick
           const dayEvents = eventsByDate[key] || [];
           const isCurrentMonth = isSameMonth(day, currentDate);
           const today = isToday(day);
+          const dayOfWeek = day.getDay();
+          
+          let dayTextColor = isCurrentMonth ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]';
+          if (!today) {
+            if (dayOfWeek === 6) dayTextColor = isCurrentMonth ? 'text-red-400' : 'text-red-400/50';
+            if (dayOfWeek === 0) dayTextColor = isCurrentMonth ? 'text-red-600' : 'text-red-600/50';
+          }
 
           return (
             <div
               key={idx}
               className={`
-                min-h-[80px] sm:min-h-[100px] p-1.5 sm:p-2 border-b border-r border-surface-700/30
+                min-h-[60px] sm:min-h-[75px] p-1.5 sm:p-2 border-b border-r border-[var(--color-border)]
                 transition-colors duration-150
-                ${isCurrentMonth ? 'bg-transparent' : 'bg-surface-900/40'}
-                ${today ? 'bg-primary-600/5' : ''}
-                hover:bg-surface-800/40
+                ${isCurrentMonth ? 'bg-[var(--color-surface)]' : 'bg-[var(--color-bg-base)]/50'}
+                ${today ? 'bg-[var(--color-accent-subtle)]/50' : ''}
+                hover:bg-[var(--color-surface-hover)] cursor-pointer
               `}
+              onClick={() => onDayClick && onDayClick(day, dayEvents)}
             >
               {/* Day Number */}
               <div className="flex items-center justify-between mb-1">
                 <span
                   className={`
                     text-sm font-medium
-                    ${today ? 'w-7 h-7 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs' : ''}
-                    ${isCurrentMonth ? (today ? '' : 'text-surface-200') : 'text-surface-600'}
+                    ${today ? 'w-7 h-7 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center text-xs shadow-sm' : dayTextColor}
                   `}
                 >
                   {format(day, 'd')}
@@ -81,13 +94,13 @@ export default function MonthView({ currentDate, events, courseMap, onEventClick
                 {/* Desktop View: Full title buttons */}
                 <div className="hidden sm:block space-y-0.5">
                   {dayEvents.slice(0, 3).map((event) => {
-                    const colors = getEventTypeColor(event.type);
                     const course = courseMap[event.course_id];
+                    const colors = getDegreeColor(course?.degrees?.[0] || 'Default');
                     return (
                       <button
                         key={event.id}
-                        onClick={() => onEventClick(event)}
-                        className="w-full text-left px-1.5 py-0.5 rounded text-xs font-medium truncate transition-all duration-150 hover:scale-[1.02] cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
+                        className="w-full text-left px-1.5 py-0.5 rounded-[var(--radius-sm)] text-xs font-medium truncate transition-all duration-150 hover:scale-[1.02] cursor-pointer border border-transparent hover:shadow-sm"
                         style={{
                           backgroundColor: colors.bg,
                           borderLeft: `2px solid ${colors.border}`,
@@ -100,7 +113,7 @@ export default function MonthView({ currentDate, events, courseMap, onEventClick
                     );
                   })}
                   {dayEvents.length > 3 && (
-                    <p className="text-xs text-surface-500 pl-1.5">
+                    <p className="text-xs text-[var(--color-text-secondary)] pl-1.5 font-medium">
                       +{dayEvents.length - 3} more
                     </p>
                   )}
@@ -109,12 +122,13 @@ export default function MonthView({ currentDate, events, courseMap, onEventClick
                 {/* Mobile View: Compact colored circles */}
                 <div className="flex flex-wrap gap-1 justify-center mt-1 sm:hidden">
                   {dayEvents.slice(0, 4).map((event) => {
-                    const colors = getEventTypeColor(event.type);
+                    const course = courseMap[event.course_id];
+                    const colors = getDegreeColor(course?.degrees?.[0] || 'Default');
                     return (
                       <button
                         key={event.id}
-                        onClick={() => onEventClick(event)}
-                        className="w-2.5 h-2.5 rounded-full border border-surface-100/30 hover:scale-125 transition-transform cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
+                        className="w-1.5 h-1.5 rounded-full hover:scale-125 transition-transform cursor-pointer shadow-sm"
                         style={{
                           backgroundColor: colors.border,
                         }}

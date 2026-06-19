@@ -49,15 +49,23 @@ export function getEventTypeClass(type) {
   return map[type] || 'badge-lecture';
 }
 
-// Get event type colors for calendar rendering
-export function getEventTypeColor(type) {
-  const map = {
-    lecture: { bg: '#eff6ff', border: '#2563eb', text: '#1e40af' },
-    exam: { bg: '#fef2f2', border: '#dc2626', text: '#991b1b' },
-    deadline: { bg: '#fffbeb', border: '#d97706', text: '#854d0e' },
+// Get degree colors for calendar rendering (dynamic hashing)
+export function getDegreeColor(degreeName) {
+  if (!degreeName) return { bg: '#e5f0ff', border: '#0f62fe', text: '#0f62fe' };
+  
+  let hash = 0;
+  for (let i = 0; i < degreeName.length; i++) {
+    hash = degreeName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  
+  return {
+    bg: `hsl(${hue}, 85%, 96%)`,
+    border: `hsl(${hue}, 85%, 60%)`,
+    text: `hsl(${hue}, 85%, 35%)`,
   };
-  return map[type] || map.lecture;
 }
+
 
 // Capitalize first letter
 export function capitalize(str) {

@@ -9,8 +9,9 @@ import {
   browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { getUserProfile, createUserProfile, getAllowedUser, getUserByRegNo } from '../lib/firestore';
+import { getUserProfile, createUserProfile, getAllowedUser, getUserByRegNo, updateUserProfile } from '../lib/firestore';
 import { regNoToEmail } from '../utils/helpers';
+import { Timestamp } from 'firebase/firestore';
 
 const AuthContext = createContext(null);
 
@@ -125,15 +126,9 @@ export function AuthProvider({ children }) {
     if (!currentUser) return;
     
     // Set a timestamp representing the exact moment all older sessions become invalid.
-    // In firestore.js we don't have Timestamp directly imported here, so we use JS Date.
-    // updateUserProfile will handle saving the JS date to Firestore as a Timestamp (if we use Timestamp.fromDate, or we just pass the Date)
-    const { Timestamp } = await import('firebase/firestore');
-    
-    await import('../lib/firestore').then(m => 
-      m.updateUserProfile(currentUser.uid, {
-        session_valid_after: Timestamp.now()
-      })
-    );
+    await updateUserProfile(currentUser.uid, {
+      session_valid_after: Timestamp.now()
+    });
     
     // Automatically signs the user out of *this* device too
     await logout();

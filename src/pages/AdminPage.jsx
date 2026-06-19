@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getAllEvents, addEvent, updateEvent, deleteEvent,
-  getAllCourses, addCourse, updateCourse, deleteCourse,
+  getAllCourses, addCourse, updateCourse, deleteCourse, bulkAddCourses, linkCourses, unlinkCourses,
   getAllUsers, updateUserProfile, deleteUser as deleteUserDoc,
   getAllAllowedUsers, addAllowedUser, removeAllowedUser, bulkAddAllowedUsers,
 } from '../lib/firestore';
@@ -14,7 +14,7 @@ import { DEGREES, EVENT_TYPES } from '../utils/constants';
 import { capitalize, formatDate } from '../utils/helpers';
 import {
   Shield, CalendarPlus, BookOpen, Users, UserCheck,
-  Plus, Trash2, Edit3, Upload, Search, X,
+  Plus, Trash2, Edit3, Upload, Search, X, Link as LinkIcon, Link2,
 } from 'lucide-react';
 
 // =============================================
@@ -27,6 +27,7 @@ export default function AdminPage() {
   const tabs = [
     { id: 'events', label: 'Events', icon: CalendarPlus },
     { id: 'courses', label: 'Courses', icon: BookOpen },
+    { id: 'links', label: 'Link Courses', icon: LinkIcon },
     ...(isSuperAdmin
       ? [
           { id: 'users', label: 'Users', icon: Users },
@@ -76,6 +77,7 @@ export default function AdminPage() {
       <div className="animate-fade-in">
         {activeTab === 'events' && <EventsTab />}
         {activeTab === 'courses' && <CoursesTab />}
+        {activeTab === 'links' && <CourseLinkerTab />}
         {activeTab === 'users' && isSuperAdmin && <UsersTab />}
         {activeTab === 'allowed' && isSuperAdmin && <AllowedUsersTab />}
       </div>
@@ -306,7 +308,9 @@ function CoursesTab() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showCsvModal, setShowCsvModal] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [courseCsvData, setCourseCsvData] = useState('');
 
   // Form
   const [form, setForm] = useState({
@@ -314,6 +318,9 @@ function CoursesTab() {
     aliases: '',
     degrees: [],
     is_elective: false,
+    semester: '',
+    credits: 0,
+    year: '',
   });
 
   useEffect(() => {
@@ -334,7 +341,7 @@ function CoursesTab() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ course_id: '', aliases: '', degrees: [], is_elective: false });
+    setForm({ course_id: '', aliases: '', degrees: [], is_elective: false, semester: '', credits: 0, year: '' });
     setShowModal(true);
   }
 
@@ -345,6 +352,9 @@ function CoursesTab() {
       aliases: (course.aliases || []).join(', '),
       degrees: course.degrees || [],
       is_elective: course.is_elective || false,
+      semester: course.semester || '',
+      credits: course.credits || 0,
+      year: course.year || '',
     });
     setShowModal(true);
   }
@@ -354,6 +364,9 @@ function CoursesTab() {
       aliases: form.aliases.split(',').map((a) => a.trim()).filter(Boolean),
       degrees: form.degrees,
       is_elective: form.is_elective,
+      semester: form.semester,
+      credits: Number(form.credits),
+      year: form.year,
     };
 
     try {
@@ -379,6 +392,57 @@ function CoursesTab() {
     }
   }
 
+  async function handleCSVUpload() {
+    try {
+      const lines = courseCsvData.trim().split('\n');
+      if (lines.length <= 1) return; // Need at least header + 1 row
+
+      const entries = [];
+      // Skip header, parse rows
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.trim()) continue;
+        
+        // Simple CSV split (not handling quoted commas perfectly, but sufficient for simple data)
+        const parts = line.split(',').map((s) => s.trim());
+        if (parts.length < 9) continue; // Need at least up to credits
+
+        const [
+          code, name, isDs, isStat, isAppliedStat, isIndStat, isElectiveStr, semesterStr, creditsStr, yearStr
+        ] = parts;
+
+        if (!code) continue;
+
+        const degrees = [];
+        const isTrue = (val) => val === '1' || val.toLowerCase() === 'true';
+
+        if (isDs && isTrue(isDs)) degrees.push('Data Science');
+        if (isStat && isTrue(isStat)) degrees.push('Statistics');
+        if (isAppliedStat && isTrue(isAppliedStat)) degrees.push('Applied Statistics');
+        if (isIndStat && isTrue(isIndStat)) degrees.push('Industrial Statistics');
+
+        entries.push({
+          course_id: code.toUpperCase(),
+          aliases: name ? [name] : [],
+          degrees,
+          is_elective: isElectiveStr && isTrue(isElectiveStr),
+          semester: semesterStr || '',
+          credits: creditsStr ? Number(creditsStr) : 0,
+          year: yearStr || '',
+        });
+      }
+
+      if (entries.length > 0) {
+        await bulkAddCourses(entries);
+        setCourseCsvData('');
+        setShowCsvModal(false);
+        await loadCourses();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   function toggleDegree(deg) {
     setForm((f) => ({
       ...f,
@@ -390,7 +454,11 @@ function CoursesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={() => setShowCsvModal(true)}>
+          <Upload className="w-4 h-4" />
+          CSV Upload
+        </Button>
         <Button onClick={openCreate}>
           <Plus className="w-4 h-4" />
           Add Course
@@ -440,6 +508,21 @@ function CoursesTab() {
                     {d}
                   </span>
                 ))}
+                {course.year && (
+                  <span className="px-2 py-0.5 rounded-md bg-surface-700 text-surface-300 text-xs">
+                    Year {course.year}
+                  </span>
+                )}
+                {course.semester && (
+                  <span className="px-2 py-0.5 rounded-md bg-primary-500/15 text-primary-400 text-xs border border-primary-500/20">
+                    Sem {course.semester}
+                  </span>
+                )}
+                {course.credits > 0 && (
+                  <span className="px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 text-xs border border-purple-500/20">
+                    {course.credits} Credits
+                  </span>
+                )}
                 {course.is_elective && (
                   <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400 text-xs border border-amber-500/20">
                     Elective
@@ -473,6 +556,31 @@ function CoursesTab() {
             value={form.aliases}
             onChange={(e) => setForm({ ...form, aliases: e.target.value })}
           />
+
+          <div className="grid grid-cols-3 gap-3">
+             <Input
+               id="course-year"
+               label="Year"
+               placeholder="e.g., 3"
+               value={form.year}
+               onChange={(e) => setForm({ ...form, year: e.target.value })}
+             />
+             <Input
+               id="course-semester"
+               label="Semester"
+               placeholder="e.g., 5"
+               value={form.semester}
+               onChange={(e) => setForm({ ...form, semester: e.target.value })}
+             />
+             <Input
+               id="course-credits"
+               label="Credits"
+               type="number"
+               placeholder="e.g., 3"
+               value={form.credits}
+               onChange={(e) => setForm({ ...form, credits: e.target.value })}
+             />
+          </div>
 
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-surface-300">Degrees</label>
@@ -516,6 +624,44 @@ function CoursesTab() {
               disabled={!form.course_id || form.degrees.length === 0}
             >
               {editing ? 'Update' : 'Create'} Course
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* CSV Upload Modal */}
+      <Modal
+        isOpen={showCsvModal}
+        onClose={() => setShowCsvModal(false)}
+        title="Bulk Upload Courses (CSV)"
+      >
+        <div className="space-y-4">
+          <div className="p-3 rounded-lg bg-surface-800 border border-surface-700">
+            <p className="text-sm text-surface-300 mb-1">
+              Expected CSV columns:
+            </p>
+            <code className="text-xs text-primary-400 block break-all mb-2">
+              code,name,is data sceince,is stat,is applied stat,isisdustrial stat,is elective,semester,credits,year
+            </code>
+            <p className="text-xs text-surface-500">
+              Example: <br/>
+              DSC321,Data Mining,1,0,1,0,0,5,3,3
+            </p>
+          </div>
+          <textarea
+            rows={8}
+            value={courseCsvData}
+            onChange={(e) => setCourseCsvData(e.target.value)}
+            placeholder={`code,name,is data sceince,is stat,is applied stat,isisdustrial stat,is elective,semester,credits,year\nDSC321,Data Mining,1,0,1,0,0,5,3,3`}
+            className="w-full px-3.5 py-2.5 rounded-lg bg-surface-800/80 border border-surface-700 text-surface-100 text-sm font-mono placeholder:text-surface-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all resize-none"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setShowCsvModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCSVUpload} disabled={!courseCsvData.trim()}>
+              <Upload className="w-4 h-4" />
+              Upload
             </Button>
           </div>
         </div>
@@ -855,6 +1001,146 @@ function AllowedUsersTab() {
           </div>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+// =============================================
+// COURSE LINKER TAB
+// =============================================
+function CourseLinkerTab() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [draggedCourseId, setDraggedCourseId] = useState(null);
+
+  useEffect(() => {
+    loadCourses();
+  }, []);
+
+  async function loadCourses() {
+    setLoading(true);
+    try {
+      const crses = await getAllCourses();
+      setCourses(crses);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDrop(e, targetCourseId) {
+    e.preventDefault();
+    if (!draggedCourseId || draggedCourseId === targetCourseId) {
+      setDraggedCourseId(null);
+      return;
+    }
+    
+    const targetCourse = courses.find(c => c.course_id === targetCourseId);
+    if (targetCourse?.linked_courses?.includes(draggedCourseId)) {
+      setDraggedCourseId(null);
+      return;
+    }
+
+    try {
+      await linkCourses(draggedCourseId, targetCourseId);
+      await loadCourses();
+    } catch (err) {
+      console.error(err);
+    }
+    setDraggedCourseId(null);
+  }
+
+  async function handleUnlink(courseIdA, courseIdB) {
+    if (!confirm('Are you sure you want to unlink these courses?')) return;
+    try {
+      await unlinkCourses(courseIdA, courseIdB);
+      await loadCourses();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-64 bg-surface-800/50 rounded-xl animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="p-4 rounded-xl bg-surface-800 border border-surface-700">
+        <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2 mb-2">
+          <LinkIcon className="w-5 h-5 text-primary-400" />
+          Course Linker
+        </h2>
+        <p className="text-sm text-surface-300">
+          Drag and drop a course onto another course to link them together. Linked courses will share the same events on the dashboard calendar.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
+        {DEGREES.map((degree) => {
+          const degreeCourses = courses.filter((c) => c.degrees?.includes(degree));
+          
+          return (
+            <div key={degree} className="flex flex-col gap-3 min-w-[280px]">
+              <div className="px-3 py-2 rounded-lg bg-surface-800 border border-surface-700">
+                <h3 className="font-medium text-surface-200 text-sm">{degree}</h3>
+                <p className="text-xs text-surface-500">{degreeCourses.length} courses</p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {degreeCourses.map((course) => (
+                  <div
+                    key={course.course_id}
+                    draggable
+                    onDragStart={() => setDraggedCourseId(course.course_id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => handleDrop(e, course.course_id)}
+                    className="glass rounded-xl p-3 border border-surface-700/50 hover:border-primary-500/50 transition-colors cursor-grab active:cursor-grabbing"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="font-mono text-sm font-bold text-primary-400">
+                        {course.course_id}
+                      </div>
+                    </div>
+                    <div className="text-sm text-surface-200 font-medium line-clamp-2 mb-2">
+                      {course.aliases?.[0] || 'Unnamed Course'}
+                    </div>
+
+                    {/* Show existing links */}
+                    {course.linked_courses?.length > 0 && (
+                      <div className="pt-2 mt-2 border-t border-surface-700/50 flex flex-wrap gap-1.5">
+                        {course.linked_courses.map(linkedId => (
+                          <div 
+                            key={linkedId}
+                            className="flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md bg-surface-700 text-xs text-surface-300"
+                          >
+                            <Link2 className="w-3 h-3 text-surface-400" />
+                            {linkedId}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleUnlink(course.course_id, linkedId); }}
+                              className="ml-1 p-0.5 rounded-sm hover:bg-red-500/20 hover:text-red-400 transition-colors"
+                              title="Unlink"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

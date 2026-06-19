@@ -26,7 +26,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-xs animate-fade-in"
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
 
@@ -34,24 +34,25 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       <div
         className={`
           relative w-full ${sizeClasses[size]}
-          glass rounded-2xl shadow-xl
+          bg-[var(--color-surface)] rounded-[var(--radius-xl)] shadow-[var(--shadow-elevated)]
+          border border-[var(--color-border)]
           animate-scale-in
           max-h-[85vh] flex flex-col
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-surface-700">
-          <h2 className="text-lg font-serif font-bold text-surface-100">{title}</h2>
+        <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg border border-transparent hover:bg-surface-800 text-surface-400 hover:text-surface-200 transition-colors cursor-pointer"
+            className="p-2 rounded-[var(--radius-sm)] border border-transparent hover:bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-5 overflow-y-auto">{children}</div>
+        <div className="p-6 overflow-y-auto">{children}</div>
       </div>
     </div>
   );
