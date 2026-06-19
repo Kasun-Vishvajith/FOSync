@@ -121,7 +121,7 @@ export default function DashboardPage() {
             <CalendarDays className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">My Calendar</h1>
+            <h1 className="text-3xl font-serif font-bold text-surface-100">My Calendar</h1>
             <p className="text-sm text-surface-400">
               {userProfile?.degree} • {events.length} event{events.length !== 1 ? 's' : ''} total
             </p>

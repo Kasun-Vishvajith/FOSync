@@ -28,18 +28,18 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-40 glass border-b border-surface-700/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <nav className="sticky top-4 z-40 glass w-full">
+      <div className="px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link
             to="/dashboard"
             className="flex items-center gap-2.5 group"
           >
-            <div className="w-8 h-8 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
+            <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center shadow-sm">
               <Calendar className="w-4.5 h-4.5 text-white" />
             </div>
-            <span className="text-lg font-bold tracking-tight">
+            <span className="text-xl font-serif font-bold tracking-tight">
               <span className="gradient-text">FO</span>
               <span className="text-surface-100">Sync</span>
             </span>
@@ -52,12 +52,12 @@ export default function Navbar() {
                 key={to}
                 to={to}
                 className={`
-                  flex items-center gap-2 px-3.5 py-2 rounded-none text-sm font-semibold border-2
-                  transition-all duration-100
+                  flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium
+                  transition-all duration-200
                   ${
                     location.pathname === to
-                      ? 'bg-primary-100 text-primary-800 border-surface-100 shadow-[2px_2px_0px_0px_var(--color-surface-100)]'
-                      : 'text-surface-400 hover:text-surface-100 hover:bg-surface-800 border-transparent hover:border-surface-100 hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)]'
+                      ? 'bg-surface-800 text-surface-100'
+                      : 'text-surface-500 hover:text-surface-200 hover:bg-surface-800/50'
                   }
                 `}
               >
@@ -75,12 +75,12 @@ export default function Navbar() {
               </p>
               <p className="text-xs text-surface-500">{userProfile?.reg_no}</p>
             </div>
-            <div className="w-8 h-8 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center text-white text-sm font-bold shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
+            <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
               {userProfile?.name?.charAt(0)?.toUpperCase() || '?'}
             </div>
             <button
               onClick={handleLogout}
-              className="p-2 rounded-none border-2 border-transparent hover:border-surface-100 text-surface-400 hover:text-red-600 hover:bg-surface-800 transition-colors cursor-pointer"
+              className="p-2 rounded-xl text-surface-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
               title="Logout"
             >
               <LogOut className="w-4.5 h-4.5" />
@@ -107,12 +107,12 @@ export default function Navbar() {
                 to={to}
                 onClick={() => setMobileOpen(false)}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-none text-sm font-semibold border-2
-                  transition-all duration-100
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                  transition-all duration-200
                   ${
                     location.pathname === to
-                      ? 'bg-primary-100 text-primary-800 border-surface-100 shadow-[2px_2px_0px_0px_var(--color-surface-100)]'
-                      : 'text-surface-400 hover:text-surface-100 hover:bg-surface-800 border-transparent hover:border-surface-100'
+                      ? 'bg-surface-800 text-surface-100'
+                      : 'text-surface-500 hover:text-surface-200 hover:bg-surface-800/50'
                   }
                 `}
               >
@@ -120,9 +120,9 @@ export default function Navbar() {
                 {label}
               </Link>
             ))}
-            <div className="border-t-2 border-surface-100 pt-2 mt-2">
+            <div className="border-t border-surface-700 pt-2 mt-2">
               <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-8 h-8 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center text-white text-sm font-bold shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
+                <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
                   {userProfile?.name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <div>
@@ -131,8 +131,7 @@ export default function Navbar() {
                 </div>
               </div>
               <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-none border-2 border-transparent hover:border-red-600 text-sm font-bold text-red-600 hover:bg-surface-800 w-full transition-colors cursor-pointer"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors cursor-pointer"
               >
                 <LogOut className="w-4.5 h-4.5" />
                 Logout

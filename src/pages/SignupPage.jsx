@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowRight, Calendar, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react';
 import { validatePassword } from '../utils/helpers';
 
 /* tiny password strength indicator */
@@ -29,19 +29,7 @@ function PasswordStrength({ password }) {
   );
 }
 
-function StepCard({ num, title, desc }) {
-  return (
-    <div className="flex items-start gap-4 p-4 rounded-none border-2 border-surface-100 bg-white shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
-      <div className="w-8 h-8 rounded-none border-2 border-surface-100 flex items-center justify-center text-sm font-bold text-white bg-primary-600 shrink-0 shadow-[1px_1px_0px_0px_var(--color-surface-100)]">
-        {num}
-      </div>
-      <div>
-        <p className="text-surface-100 font-bold text-sm">{title}</p>
-        <p className="text-surface-500 font-medium text-xs mt-0.5 leading-relaxed">{desc}</p>
-      </div>
-    </div>
-  );
-}
+
 
 export default function SignupPage() {
   const [regNo, setRegNo] = useState('');
@@ -87,79 +75,23 @@ export default function SignupPage() {
     <div className="min-h-screen flex gradient-bg">
 
       {/* ════════════════════════════════
-          LEFT — brand panel
+          CENTERED FORM
           ════════════════════════════════ */}
-      <div className="auth-panel hidden lg:flex flex-col justify-between w-[42%] p-12">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 sm:px-16 py-10 overflow-y-auto">
 
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center shadow-[3px_3px_0px_0px_var(--color-surface-100)]">
-            <Calendar className="w-5 h-5 text-white" />
+        <div className="w-full max-w-md auth-card p-8 sm:p-10 bg-white animate-slide-in-right">
+
+          {/* Typography Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="w-12 h-12 rounded-xl bg-primary-600 shadow-md flex items-center justify-center">
+              <span className="font-serif text-2xl font-bold text-white italic">F</span>
+            </div>
           </div>
-          <span className="text-xl font-bold text-surface-100 tracking-tight">FOSync</span>
-        </div>
-
-        {/* Hero copy */}
-        <div className="space-y-6 relative z-10">
-          <div>
-            <p className="text-surface-500 text-xs font-bold uppercase tracking-widest mb-4">
-              Get started in minutes
-            </p>
-            <h1 className="text-4xl font-bold text-surface-100 leading-tight">
-              Join your<br />
-              department's<br />
-              <span className="text-primary-600">calendar hub.</span>
-            </h1>
-          </div>
-
-          <p className="text-surface-300 text-base font-medium leading-relaxed max-w-xs">
-            Register with your student number, pick your electives, and your personalised schedule is ready instantly.
-          </p>
-
-          {/* Steps */}
-          <div className="space-y-3 pt-2">
-            <StepCard
-              num="1"
-              title="Verify your registration number"
-              desc="Must be on the approved student list"
-            />
-            <StepCard
-              num="2"
-              title="Choose your elective courses"
-              desc="Core courses are auto-assigned by degree"
-            />
-            <StepCard
-              num="3"
-              title="View your personalised calendar"
-              desc="Lectures, exams & deadlines, all in one place"
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <p className="text-surface-500 font-bold text-xs relative z-10">
-          University of Colombo — Faculty of Science
-        </p>
-      </div>
-
-      {/* ════════════════════════════════
-          RIGHT — form panel
-          ════════════════════════════════ */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 sm:px-12 py-10 overflow-y-auto">
-        {/* Mobile logo */}
-        <div className="lg:hidden flex items-center gap-2 mb-8">
-          <div className="w-9 h-9 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
-            <Calendar className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-surface-100">FOSync</span>
-        </div>
-
-        <div className="w-full max-w-md auth-card p-8 bg-white animate-slide-in-right">
 
           {/* Heading */}
-          <div className="mb-7">
-            <h2 className="text-3xl font-bold text-surface-100 tracking-tight">Create account</h2>
-            <p className="mt-2 text-surface-400 text-base font-medium">
+          <div className="mb-7 text-center">
+            <h2 className="text-3xl font-serif font-bold text-surface-100 tracking-tight">Create account</h2>
+            <p className="mt-2 text-surface-400 text-sm font-medium">
               Fill in your details to get started
             </p>
           </div>
@@ -176,7 +108,7 @@ export default function SignupPage() {
 
             {/* Reg No */}
             <div className="space-y-1.5">
-              <label htmlFor="su-reg" className="block text-sm font-bold text-surface-200">
+              <label htmlFor="su-reg" className="block text-sm font-medium text-surface-200">
                 Registration Number
               </label>
               <input
@@ -187,14 +119,14 @@ export default function SignupPage() {
                 value={regNo}
                 onChange={(e) => setRegNo(e.target.value)}
                 required
-                className="auth-input w-full px-4 py-3 rounded-none text-sm font-semibold"
+                className="auth-input w-full px-4 py-3 text-sm font-medium"
               />
-              <p className="text-xs text-surface-500 font-medium">Format: YYYYsXXXXX</p>
+
             </div>
 
             {/* Full Name */}
             <div className="space-y-1.5">
-              <label htmlFor="su-name" className="block text-sm font-bold text-surface-200">
+              <label htmlFor="su-name" className="block text-sm font-medium text-surface-200">
                 Full Name
               </label>
               <input
@@ -205,13 +137,13 @@ export default function SignupPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="auth-input w-full px-4 py-3 rounded-none text-sm font-semibold"
+                className="auth-input w-full px-4 py-3 text-sm font-medium"
               />
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="su-pw" className="block text-sm font-bold text-surface-200">
+              <label htmlFor="su-pw" className="block text-sm font-medium text-surface-200">
                 Password
               </label>
               <div className="relative">
@@ -223,7 +155,7 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="auth-input w-full px-4 py-3 pr-12 rounded-none text-sm font-semibold"
+                  className="auth-input w-full px-4 py-3 pr-12 text-sm font-medium"
                 />
                 <button
                   type="button"
@@ -239,7 +171,7 @@ export default function SignupPage() {
 
             {/* Confirm Password */}
             <div className="space-y-1.5">
-              <label htmlFor="su-confirm" className="block text-sm font-bold text-surface-200">
+              <label htmlFor="su-confirm" className="block text-sm font-medium text-surface-200">
                 Confirm Password
               </label>
               <div className="relative">
@@ -251,15 +183,14 @@ export default function SignupPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="auth-input w-full px-4 py-3 pr-12 rounded-none text-sm font-semibold"
+                  className="auth-input w-full px-4 py-3 pr-12 text-sm font-medium"
                   style={
                     confirmPassword
                       ? {
-                          borderColor: passwordsMatch ? '#16a34a' : '#dc2626',
-                          transform: 'translate(-1px, -1px)',
+                          borderColor: passwordsMatch ? '#10b981' : '#ef4444',
                           boxShadow: passwordsMatch
-                            ? '2px 2px 0px 0px var(--color-surface-100)'
-                            : '2px 2px 0px 0px #dc2626',
+                            ? '0 0 0 3px rgba(16, 185, 129, 0.15)'
+                            : '0 0 0 3px rgba(239, 68, 68, 0.15)',
                         }
                       : undefined
                   }
@@ -289,12 +220,10 @@ export default function SignupPage() {
               disabled={loading}
               className="
                 w-full flex items-center justify-center gap-2 mt-2
-                py-3.5 rounded-none text-sm font-bold text-white
-                transition-all duration-100
-                bg-primary-600 border-2 border-surface-100
-                shadow-[3px_3px_0px_0px_var(--color-surface-100)]
-                hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
-                active:translate-x-[3px] active:translate-y-[3px] active:shadow-none
+                py-3.5 rounded-xl text-sm font-medium text-white
+                transition-all duration-200
+                bg-primary-600 border border-transparent
+                shadow-sm hover:bg-primary-700 active:bg-primary-800 hover:-translate-y-0.5
                 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none
                 cursor-pointer
               "
@@ -319,10 +248,10 @@ export default function SignupPage() {
           {/* Sign-in link */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t-2 border-surface-700" />
+              <div className="w-full border-t border-surface-700" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-xs text-surface-500 font-bold">
+              <span className="px-3 bg-white text-xs text-surface-500 font-medium">
                 Already have an account?
               </span>
             </div>
@@ -332,12 +261,10 @@ export default function SignupPage() {
             to="/login"
             className="
               w-full flex items-center justify-center gap-2
-              py-3 rounded-none text-sm font-bold bg-surface-900
-              border-2 border-surface-100 text-surface-100
-              shadow-[3px_3px_0px_0px_var(--color-surface-100)]
-              hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
-              active:translate-x-[3px] active:translate-y-[3px] active:shadow-none
-              transition-all duration-100
+              py-3 rounded-xl text-sm font-medium bg-surface-900
+              border border-surface-700 text-surface-200
+              shadow-sm hover:bg-surface-800 active:bg-surface-700 hover:-translate-y-0.5
+              transition-all duration-200
               cursor-pointer
             "
           >

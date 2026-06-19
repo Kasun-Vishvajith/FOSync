@@ -9,7 +9,7 @@ const Select = forwardRef(function Select(
       {label && (
         <label
           htmlFor={id}
-          className="block text-sm font-semibold text-surface-200"
+          className="block text-sm font-medium text-surface-200"
         >
           {label}
         </label>
@@ -18,12 +18,12 @@ const Select = forwardRef(function Select(
         ref={ref}
         id={id}
         className={`
-          w-full px-3.5 py-2.5 rounded-none
-          bg-surface-900 border-2 border-surface-100
+          w-full px-3.5 py-2.5 rounded-xl
+          bg-surface-900 border border-surface-700
           text-surface-100
-          transition-all duration-100
-          focus:outline-none focus:translate-x-[-1px] focus:translate-y-[-1px] focus:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
-          ${error ? 'border-red-600 focus:shadow-[2px_2px_0px_0px_#dc2626]' : ''}
+          transition-all duration-200 shadow-sm
+          focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-600/10
+          ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : ''}
           ${className}
         `}
         {...props}

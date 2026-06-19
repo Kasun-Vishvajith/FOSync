@@ -1,24 +1,15 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowRight, Calendar, BookOpen, Users, Bell, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 
-/* ── small feature bullet used on left panel ── */
-function Feature({ icon: Icon, text }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-none border-2 border-surface-100 bg-white flex items-center justify-center shrink-0 shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
-        <Icon className="w-4 h-4 text-surface-100" />
-      </div>
-      <span className="text-surface-100 font-semibold text-sm">{text}</span>
-    </div>
-  );
-}
+
 
 export default function LoginPage() {
   const [regNo, setRegNo] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -29,7 +20,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(regNo.trim().toLowerCase(), password);
+      await login(regNo.trim().toLowerCase(), password, rememberMe);
       navigate('/dashboard');
     } catch (err) {
       const msg = err.message || '';
@@ -53,73 +44,25 @@ export default function LoginPage() {
     <div className="min-h-screen flex gradient-bg">
 
       {/* ════════════════════════════════
-          LEFT — brand panel
+          CENTERED FORM
           ════════════════════════════════ */}
-      <div className="auth-panel hidden lg:flex flex-col justify-between w-[44%] p-12">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 sm:px-16 h-screen overflow-hidden">
 
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center shadow-[3px_3px_0px_0px_var(--color-surface-100)]">
-            <Calendar className="w-5 h-5 text-white" />
+        <div className="w-full max-w-md auth-card p-8 sm:p-10 bg-white animate-slide-in-right">
+          
+          {/* Typography Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="w-12 h-12 rounded-xl bg-primary-600 shadow-md flex items-center justify-center">
+              <span className="font-serif text-2xl font-bold text-white italic">F</span>
+            </div>
           </div>
-          <span className="text-xl font-bold text-surface-100 tracking-tight">FOSync</span>
-        </div>
-
-        {/* Hero copy */}
-        <div className="space-y-6 relative z-10">
-          <div>
-            <p className="text-surface-500 text-xs font-bold uppercase tracking-widest mb-4">
-              University of Colombo · Faculty of Science
-            </p>
-            <h1 className="text-4xl font-bold text-surface-100 leading-tight">
-              Your academic<br />
-              schedule,<br />
-              <span className="text-primary-600">beautifully organised.</span>
-            </h1>
-          </div>
-
-          <p className="text-surface-300 text-base font-medium leading-relaxed max-w-xs">
-            One place to track every lecture, exam, and deadline — personalised to your degree and electives.
-          </p>
-
-          {/* Feature list */}
-          <div className="space-y-3 pt-2">
-            <Feature icon={Calendar}  text="Weekly & monthly calendar views" />
-            <Feature icon={BookOpen}  text="Courses tailored to your degree" />
-            <Feature icon={Bell}      text="Exams & deadlines at a glance" />
-            <Feature icon={Users}     text="Statistics Department pilot" />
-          </div>
-        </div>
-
-        {/* Bottom quote */}
-        <div className="glass-light p-5 relative z-10">
-          <p className="text-surface-200 text-sm italic font-medium leading-relaxed">
-            "Organised students perform better. FOSync helps you stay one step ahead."
-          </p>
-          <p className="text-surface-500 text-xs font-bold mt-2">Department of Statistics</p>
-        </div>
-      </div>
-
-      {/* ════════════════════════════════
-          RIGHT — form panel
-          ════════════════════════════════ */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 sm:px-12 py-12">
-        {/* Mobile-only logo */}
-        <div className="lg:hidden flex items-center gap-2 mb-8">
-          <div className="w-9 h-9 rounded-none bg-primary-600 border-2 border-surface-100 flex items-center justify-center shadow-[2px_2px_0px_0px_var(--color-surface-100)]">
-            <Calendar className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-surface-100">FOSync</span>
-        </div>
-
-        <div className="w-full max-w-md auth-card p-8 bg-white animate-slide-in-right">
 
           {/* Heading */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-surface-100 tracking-tight">
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl font-serif font-bold text-surface-100 tracking-tight">
               Welcome back
             </h2>
-            <p className="mt-2 text-surface-400 text-base font-medium">
+            <p className="mt-2 text-surface-400 text-sm font-medium">
               Sign in to your student account
             </p>
           </div>
@@ -137,7 +80,7 @@ export default function LoginPage() {
 
             {/* Reg No */}
             <div className="space-y-1.5">
-              <label htmlFor="login-reg" className="block text-sm font-bold text-surface-200">
+              <label htmlFor="login-reg" className="block text-sm font-medium text-surface-200">
                 Registration Number
               </label>
               <input
@@ -148,14 +91,14 @@ export default function LoginPage() {
                 value={regNo}
                 onChange={(e) => setRegNo(e.target.value)}
                 required
-                className="auth-input w-full px-4 py-3 rounded-none text-sm font-semibold"
+                className="auth-input w-full px-4 py-3 text-sm font-medium"
               />
-              <p className="text-xs text-surface-500 font-medium">Format: YYYYsXXXXX</p>
+
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="login-pw" className="block text-sm font-bold text-surface-200">
+              <label htmlFor="login-pw" className="block text-sm font-medium text-surface-200">
                 Password
               </label>
               <div className="relative">
@@ -167,7 +110,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="auth-input w-full px-4 py-3 pr-12 rounded-none text-sm font-semibold"
+                  className="auth-input w-full px-4 py-3 pr-12 text-sm font-medium"
                 />
                 <button
                   type="button"
@@ -180,18 +123,30 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Remember Me */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="login-remember"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-surface-700 text-primary-600 focus:ring-primary-600"
+              />
+              <label htmlFor="login-remember" className="text-sm font-medium text-surface-400 select-none cursor-pointer">
+                Remember me on this device
+              </label>
+            </div>
+
             {/* Submit */}
             <button
               type="submit"
               disabled={loading}
               className="
                 w-full flex items-center justify-center gap-2
-                py-3.5 rounded-none text-sm font-bold text-white
-                transition-all duration-100
-                bg-primary-600 border-2 border-surface-100
-                shadow-[3px_3px_0px_0px_var(--color-surface-100)]
-                hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
-                active:translate-x-[3px] active:translate-y-[3px] active:shadow-none
+                py-3.5 rounded-xl text-sm font-medium text-white
+                transition-all duration-200
+                bg-primary-600 border border-transparent
+                shadow-sm hover:bg-primary-700 active:bg-primary-800 hover:-translate-y-0.5
                 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none
                 cursor-pointer
               "
@@ -216,10 +171,10 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t-2 border-surface-700" />
+              <div className="w-full border-t border-surface-700" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-xs text-surface-500 font-bold">
+              <span className="px-3 bg-white text-xs text-surface-500 font-medium">
                 New to FOSync?
               </span>
             </div>
@@ -230,12 +185,10 @@ export default function LoginPage() {
             to="/signup"
             className="
               w-full flex items-center justify-center gap-2
-              py-3 rounded-none text-sm font-bold bg-surface-900
-              border-2 border-surface-100 text-surface-100
-              shadow-[3px_3px_0px_0px_var(--color-surface-100)]
-              hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)]
-              active:translate-x-[3px] active:translate-y-[3px] active:shadow-none
-              transition-all duration-100
+              py-3 rounded-xl text-sm font-medium bg-surface-900
+              border border-surface-700 text-surface-200
+              shadow-sm hover:bg-surface-800 active:bg-surface-700 hover:-translate-y-0.5
+              transition-all duration-200
               cursor-pointer
             "
           >

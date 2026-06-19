@@ -4,6 +4,9 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  setPersistence,
+  browserSessionPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { getUserProfile, createUserProfile, getAllowedUser, getUserByRegNo } from '../lib/firestore';
@@ -24,16 +27,37 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
       if (user) {
         try {
           const profile = await getUserProfile(user.uid);
+          
+          // Check for 'log out from all devices' validity
+          if (profile?.session_valid_after) {
+            // Get the token's issue time (auth_time is in seconds)
+            const tokenResult = await user.getIdTokenResult();
+            const authTime = new Date(tokenResult.claims.auth_time * 1000).getTime();
+            const validAfter = profile.session_valid_after.toMillis();
+            
+            if (authTime < validAfter) {
+              // This session is older than the last "log out of all devices" event
+              console.warn("Session invalidated because of 'log out of all devices'");
+              await signOut(auth);
+              setCurrentUser(null);
+              setUserProfile(null);
+              setLoading(false);
+              return;
+            }
+          }
+          
+          setCurrentUser(user);
           setUserProfile(profile);
         } catch (err) {
           console.error('Failed to fetch profile:', err);
           setUserProfile(null);
+          setCurrentUser(null);
         }
       } else {
+        setCurrentUser(null);
         setUserProfile(null);
       }
       setLoading(false);
@@ -42,10 +66,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function signup(regNo, name, password) {
-    // 1. Validate format
-    if (!validateRegNo(regNo)) {
-      throw new Error('Invalid registration number format. Expected: YYYYsXXXXX (e.g., 2022s19001)');
-    }
 
     // 2. Check whitelist
     const allowed = await getAllowedUser(regNo);
@@ -79,11 +99,13 @@ export function AuthProvider({ children }) {
     return credential.user;
   }
 
-  async function login(regNo, password) {
-    if (!validateRegNo(regNo)) {
-      throw new Error('Invalid registration number format. Expected: YYYYsXXXXX (e.g., 2022s19001)');
-    }
+  async function login(regNo, password, rememberMe = true) {
     const email = regNoToEmail(regNo);
+
+    // Apply persistence preference
+    const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+    await setPersistence(auth, persistenceType);
+
     const credential = await signInWithEmailAndPassword(auth, email, password);
 
     const profile = await getUserProfile(credential.user.uid);
@@ -96,6 +118,24 @@ export function AuthProvider({ children }) {
     await signOut(auth);
     setCurrentUser(null);
     setUserProfile(null);
+  }
+
+  async function logOutAllDevices() {
+    if (!currentUser) return;
+    
+    // Set a timestamp representing the exact moment all older sessions become invalid.
+    // In firestore.js we don't have Timestamp directly imported here, so we use JS Date.
+    // updateUserProfile will handle saving the JS date to Firestore as a Timestamp (if we use Timestamp.fromDate, or we just pass the Date)
+    const { Timestamp } = await import('firebase/firestore');
+    
+    await import('../lib/firestore').then(m => 
+      m.updateUserProfile(currentUser.uid, {
+        session_valid_after: Timestamp.now()
+      })
+    );
+    
+    // Automatically signs the user out of *this* device too
+    await logout();
   }
 
   async function refreshProfile() {
@@ -112,6 +152,7 @@ export function AuthProvider({ children }) {
     signup,
     login,
     logout,
+    logOutAllDevices,
     refreshProfile,
     isAdmin: userProfile?.role === 'admin' || userProfile?.role === 'super_admin',
     isSuperAdmin: userProfile?.role === 'super_admin',

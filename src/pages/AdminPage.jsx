@@ -43,7 +43,7 @@ export default function AdminPage() {
           <Shield className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Admin Panel</h1>
+          <h1 className="text-3xl font-serif font-bold text-surface-100">Admin Panel</h1>
           <p className="text-sm text-surface-400">
             {isSuperAdmin ? 'Super Admin' : 'Admin'} — Manage courses, events & users
           </p>

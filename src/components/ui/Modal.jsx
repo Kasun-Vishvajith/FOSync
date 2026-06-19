@@ -34,17 +34,17 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       <div
         className={`
           relative w-full ${sizeClasses[size]}
-          glass rounded-none shadow-[6px_6px_0px_0px_var(--color-surface-100)]
+          glass rounded-2xl shadow-xl
           animate-scale-in
           max-h-[85vh] flex flex-col
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b-2 border-surface-100">
-          <h2 className="text-lg font-bold text-surface-100">{title}</h2>
+        <div className="flex items-center justify-between p-5 border-b border-surface-700">
+          <h2 className="text-lg font-serif font-bold text-surface-100">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-none border-2 border-surface-100 hover:bg-surface-800 text-surface-200 hover:text-surface-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg border border-transparent hover:bg-surface-800 text-surface-400 hover:text-surface-200 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

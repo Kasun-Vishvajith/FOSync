@@ -1,10 +1,10 @@
 import { Loader2 } from 'lucide-react';
 
 const variants = {
-  primary: 'bg-primary-600 text-white border-2 border-surface-100 shadow-[3px_3px_0px_0px_var(--color-surface-100)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none',
-  secondary: 'bg-surface-900 text-surface-100 border-2 border-surface-100 shadow-[3px_3px_0px_0px_var(--color-surface-100)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none',
-  danger: 'bg-red-600 text-white border-2 border-surface-100 shadow-[3px_3px_0px_0px_var(--color-surface-100)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_var(--color-surface-100)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none',
-  ghost: 'bg-transparent text-surface-300 hover:text-surface-100 hover:bg-surface-800 border-2 border-transparent',
+  primary: 'bg-primary-600 text-white border border-transparent shadow-sm hover:bg-primary-700 active:bg-primary-800 hover:-translate-y-0.5',
+  secondary: 'bg-surface-900 text-surface-200 border border-surface-700 shadow-sm hover:bg-surface-800 active:bg-surface-700 hover:-translate-y-0.5',
+  danger: 'bg-red-500 text-white border border-transparent shadow-sm hover:bg-red-600 active:bg-red-700 hover:-translate-y-0.5',
+  ghost: 'bg-transparent text-surface-400 hover:text-surface-200 hover:bg-surface-800 border border-transparent',
 };
 
 const sizes = {
@@ -25,8 +25,8 @@ export default function Button({
   return (
     <button
       className={`
-        inline-flex items-center justify-center gap-2 font-semibold rounded-none
-        transition-all duration-100 cursor-pointer
+        inline-flex items-center justify-center gap-2 font-medium rounded-xl
+        transition-all duration-200 cursor-pointer
         disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none
         ${variants[variant]} ${sizes[size]} ${className}
       `}

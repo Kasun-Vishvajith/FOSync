@@ -4,10 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { getCoursesForDegree } from '../lib/firestore';
 import { updateUserProfile } from '../lib/firestore';
 import Button from '../components/ui/Button';
-import { BookOpen, Check, ArrowRight, Sparkles } from 'lucide-react';
+import { BookOpen, Check, ArrowRight, Sparkles, ShieldAlert, LogOut } from 'lucide-react';
 
 export default function SetupPage() {
-  const { userProfile, currentUser, refreshProfile } = useAuth();
+  const { userProfile, currentUser, refreshProfile, logOutAllDevices } = useAuth();
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [selectedElectives, setSelectedElectives] = useState([]);
@@ -72,7 +72,7 @@ export default function SetupPage() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-surface-100">
+            <h1 className="text-3xl font-serif font-bold text-surface-100">
               Set Up Your Courses
             </h1>
             <p className="text-sm text-surface-400">
@@ -188,8 +188,28 @@ export default function SetupPage() {
         )}
       </section>
 
+      {/* Security Section */}
+      <section className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+        <h2 className="text-lg font-semibold text-red-500 mb-3 flex items-center gap-2">
+          <ShieldAlert className="w-5 h-5 text-red-500" />
+          Security
+        </h2>
+        <div className="glass rounded-xl p-5 border-red-500/20 bg-red-50/30">
+          <p className="text-sm text-surface-400 mb-4">
+            If you've left your account logged in on a public computer or lost a device, you can force all active sessions to log out immediately. This will also log you out of your current device.
+          </p>
+          <Button 
+            onClick={logOutAllDevices} 
+            className="!bg-red-600 hover:!bg-red-700 !text-white flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Log out from all devices
+          </Button>
+        </div>
+      </section>
+
       {/* Save Button */}
-      <div className="flex justify-end animate-fade-in" style={{ animationDelay: '0.3s' }}>
+      <div className="flex justify-end animate-fade-in" style={{ animationDelay: '0.4s' }}>
         <Button onClick={handleSave} loading={saving} size="lg">
           Save & Continue
           <ArrowRight className="w-4 h-4" />

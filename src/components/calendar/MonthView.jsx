@@ -79,30 +79,56 @@ export default function MonthView({ currentDate, events, courseMap, onEventClick
 
               {/* Events */}
               <div className="space-y-0.5">
-                {dayEvents.slice(0, 3).map((event) => {
-                  const colors = getEventTypeColor(event.type);
-                  const course = courseMap[event.course_id];
-                  return (
-                    <button
-                      key={event.id}
-                      onClick={() => onEventClick(event)}
-                      className="w-full text-left px-1.5 py-0.5 rounded text-xs font-medium truncate transition-all duration-150 hover:scale-[1.02] cursor-pointer"
-                      style={{
-                        backgroundColor: colors.bg,
-                        borderLeft: `2px solid ${colors.border}`,
-                        color: colors.text,
-                      }}
-                      title={`${event.title} — ${course?.aliases?.[0] || event.course_id}`}
-                    >
-                      {event.title}
-                    </button>
-                  );
-                })}
-                {dayEvents.length > 3 && (
-                  <p className="text-xs text-surface-500 pl-1.5">
-                    +{dayEvents.length - 3} more
-                  </p>
-                )}
+                {/* Desktop View: Full title buttons */}
+                <div className="hidden sm:block space-y-0.5">
+                  {dayEvents.slice(0, 3).map((event) => {
+                    const colors = getEventTypeColor(event.type);
+                    const course = courseMap[event.course_id];
+                    return (
+                      <button
+                        key={event.id}
+                        onClick={() => onEventClick(event)}
+                        className="w-full text-left px-1.5 py-0.5 rounded text-xs font-medium truncate transition-all duration-150 hover:scale-[1.02] cursor-pointer"
+                        style={{
+                          backgroundColor: colors.bg,
+                          borderLeft: `2px solid ${colors.border}`,
+                          color: colors.text,
+                        }}
+                        title={`${event.title} — ${course?.aliases?.[0] || event.course_id}`}
+                      >
+                        {event.title}
+                      </button>
+                    );
+                  })}
+                  {dayEvents.length > 3 && (
+                    <p className="text-xs text-surface-500 pl-1.5">
+                      +{dayEvents.length - 3} more
+                    </p>
+                  )}
+                </div>
+
+                {/* Mobile View: Compact colored circles */}
+                <div className="flex flex-wrap gap-1 justify-center mt-1 sm:hidden">
+                  {dayEvents.slice(0, 4).map((event) => {
+                    const colors = getEventTypeColor(event.type);
+                    return (
+                      <button
+                        key={event.id}
+                        onClick={() => onEventClick(event)}
+                        className="w-2.5 h-2.5 rounded-full border border-surface-100/30 hover:scale-125 transition-transform cursor-pointer"
+                        style={{
+                          backgroundColor: colors.border,
+                        }}
+                        title={event.title}
+                      />
+                    );
+                  })}
+                  {dayEvents.length > 4 && (
+                    <span className="text-[9px] font-bold text-surface-400">
+                      +
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );

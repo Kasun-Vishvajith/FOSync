@@ -7,6 +7,7 @@ import SignupPage from './pages/SignupPage';
 import SetupPage from './pages/SetupPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
+import AdminSetupPage from './pages/AdminSetupPage';
 
 export default function App() {
   return (
@@ -36,6 +37,12 @@ export default function App() {
               }
             />
           </Route>
+          
+          <Route path="/init-admin" element={
+            <ProtectedRoute>
+              <AdminSetupPage />
+            </ProtectedRoute>
+          } />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/login" replace />} />
