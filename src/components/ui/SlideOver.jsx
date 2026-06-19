@@ -25,7 +25,7 @@ export default function SlideOver({ isOpen, onClose, title, children }) {
       />
       
       {/* Panel */}
-      <div className="relative w-full max-w-md h-full bg-[var(--color-surface)] border-l border-[var(--color-border)] shadow-[var(--shadow-elevated)] flex flex-col animate-slide-up sm:animate-fade-in">
+      <div className="relative w-full max-w-md h-full sm:h-[calc(100%-2rem)] sm:my-4 sm:mr-4 sm:rounded-2xl bg-[var(--color-surface)] border-l sm:border border-[var(--color-border)] shadow-[var(--shadow-elevated)] flex flex-col animate-slide-up sm:animate-fade-in">
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[var(--color-border)]">
           <h2 className="text-xl font-bold text-[var(--color-text-primary)]">{title}</h2>
           <button

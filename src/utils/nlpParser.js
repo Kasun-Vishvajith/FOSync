@@ -5,16 +5,12 @@ export function parseNaturalLanguageEvent(inputStr, availableCourses, matchCours
   // 1. Parse dates using Chrono
   const parsedResults = chrono.parse(inputStr);
   let parsedDate = null;
+  let hasTime = false;
   
   if (parsedResults && parsedResults.length > 0) {
     // We take the first matched date entity
     parsedDate = parsedResults[0].start.date();
-  } else {
-    // If no date found, default to tomorrow at 8 AM as a fallback/example
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(8, 0, 0, 0);
-    parsedDate = tomorrow;
+    hasTime = parsedResults[0].start.isCertain('hour');
   }
 
   // 2. Determine Event Type
@@ -49,6 +45,7 @@ export function parseNaturalLanguageEvent(inputStr, availableCourses, matchCours
   return {
     title: cleanTitle,
     date: parsedDate,
+    hasTime: hasTime,
     type: selectedType,
     courseMatch: courseMatch || null,
   };

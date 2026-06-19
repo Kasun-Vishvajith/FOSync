@@ -7,7 +7,8 @@ import {
   Shield,
   Menu,
   X,
-  LogIn
+  LogIn,
+  MessageSquare
 } from 'lucide-react';
 import { useState } from 'react';
 import Button from '../ui/Button';
@@ -25,6 +26,7 @@ export default function Navbar() {
 
   const navLinks = [
     { to: '/dashboard', label: 'Calendar', icon: Calendar },
+    ...(currentUser ? [{ to: '/chat', label: 'Chat', icon: MessageSquare }] : []),
     ...(currentUser ? [{ to: '/setup', label: 'Electives', icon: Settings }] : []),
     ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: Shield }] : []),
   ];

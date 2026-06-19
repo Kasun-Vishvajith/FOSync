@@ -42,6 +42,7 @@ export default function DashboardPage() {
     type: 'lecture',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [publicDegree, setPublicDegree] = useState('Data Science');
 
   const navigate = useNavigate();
@@ -97,7 +98,7 @@ export default function DashboardPage() {
     }
 
     loadData();
-  }, [activeDegree, userProfile?.electives, currentUser]);
+  }, [activeDegree, userProfile?.electives, currentUser, refreshTrigger]);
 
   // Navigation
   function goToday() {
@@ -143,7 +144,7 @@ export default function DashboardPage() {
   }, [courses]);
 
   return (
-    <div className="space-y-3 pb-4">
+    <div className="space-y-4 pb-4">
       {/* Header with stats */}
       <div className={`flex flex-col sm:flex-row justify-end animate-fade-in ${!currentUser ? 'mb-2' : ''}`}>
         {/* Public Degree Selector (Only if not logged in) */}
@@ -197,14 +198,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Quick Add Chat Widget (Only if logged in) */}
-          {currentUser && (
-             <QuickAddChat onEventAdded={() => {
-                // To force reload, we can just trigger a state update, or if we use realtime listeners it auto-updates.
-                // For now, relying on user refresh or we can pass a refresh trigger.
-             }} />
-          )}
-
           {/* Event Detail Modal */}
           <EventDetailModal
             event={selectedEvent}
@@ -239,7 +232,7 @@ export default function DashboardPage() {
                         <button
                           key={t}
                           onClick={() => setAddForm({ ...addForm, time: t })}
-                          className={`py-2 px-3 rounded-[var(--radius-sm)] text-sm transition-colors ${addForm.time === t ? 'bg-[var(--color-accent)] text-white font-medium border border-transparent shadow-[var(--shadow-soft)]' : 'bg-[var(--color-bg-base)] text-[var(--color-text-primary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]'}`}
+                          className={`py-1.5 px-3 rounded-full text-sm font-semibold transition-colors ${addForm.time === t ? 'bg-[var(--color-accent)] text-white border border-transparent shadow-[var(--shadow-soft)]' : 'bg-[var(--color-bg-base)] text-[var(--color-text-primary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]'}`}
                         >
                           {t}
                         </button>
