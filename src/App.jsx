@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { EventsProvider } from './contexts/EventsContext';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 import { Loader2 } from 'lucide-react';
@@ -26,52 +27,50 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            {/* Public Auth routes */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+        {/* EventsProvider must be inside AuthProvider so it can read currentUser */}
+        <EventsProvider>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              {/* Public Auth routes */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
 
-            {/* Layout routes - both public and protected mixed */}
-            <Route element={<AppLayout />}>
-              {/* Publicly viewable calendar */}
-              <Route path="/dashboard" element={<DashboardPage />} />
-              
-              {/* Protected inner routes */}
-              <Route
-                path="/setup"
-                element={
-                  <ProtectedRoute>
-                    <SetupPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/chat"
-                element={
-                  <ProtectedRoute>
-                    <ChatPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminPage />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
-            
-            <Route path="/init-admin" element={<AdminSetupPage />} />
+              {/* Layout routes */}
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Suspense>
+                <Route
+                  path="/setup"
+                  element={
+                    <ProtectedRoute>
+                      <SetupPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/chat"
+                  element={
+                    <ProtectedRoute>
+                      <ChatPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminPage />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
+
+              <Route path="/init-admin" element={<AdminSetupPage />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Suspense>
+        </EventsProvider>
       </AuthProvider>
     </BrowserRouter>
   );
 }
-

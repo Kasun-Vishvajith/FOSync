@@ -45,6 +45,8 @@ export function getEventTypeClass(type) {
     lecture: 'badge-lecture',
     exam: 'badge-exam',
     deadline: 'badge-deadline',
+    practical: 'badge-practical',
+    tutorial: 'badge-tutorial',
   };
   return map[type] || 'badge-lecture';
 }
@@ -66,6 +68,23 @@ export function getDegreeColor(degreeName) {
   };
 }
 
+export function getEventTypeColor(type) {
+  const t = type?.toLowerCase() || 'lecture';
+  switch (t) {
+    case 'exam':
+      return { bg: '#fee2e2', border: '#ef4444', text: '#b91c1c' }; // Red
+    case 'practical':
+      return { bg: '#f3e8ff', border: '#a855f7', text: '#7e22ce' }; // Purple
+    case 'tutorial':
+      return { bg: '#e0e7ff', border: '#6366f1', text: '#4338ca' }; // Indigo
+    case 'deadline':
+      return { bg: '#ffedd5', border: '#f97316', text: '#c2410c' }; // Orange
+    case 'lecture':
+    default:
+      return { bg: '#e5f0ff', border: '#3b82f6', text: '#1d4ed8' }; // Blue
+  }
+}
+
 
 // Capitalize first letter
 export function capitalize(str) {
@@ -78,3 +97,41 @@ export function truncate(str, maxLen = 40) {
   if (!str || str.length <= maxLen) return str;
   return str.slice(0, maxLen) + '…';
 }
+
+// Parse custom time input strings (e.g. "10:30 AM", "3 PM", "15:00", "8.15 pm")
+export function parseCustomTime(timeStr) {
+  if (!timeStr) return null;
+  
+  const clean = timeStr.trim().toLowerCase();
+  
+  // Matches "H", "H:MM", "H.MM" with optional "AM"/"PM" suffix (with optional spaces)
+  const timeRegex = /^(\d{1,2})(?::|\.)?(\d{2})?\s*(am|pm)?$/i;
+  const match = clean.match(timeRegex);
+  
+  if (!match) return null;
+  
+  let hours = parseInt(match[1], 10);
+  let minutes = match[2] ? parseInt(match[2], 10) : 0;
+  const ampm = match[3];
+  
+  if (ampm) {
+    if (ampm === 'pm' && hours < 12) {
+      hours += 12;
+    } else if (ampm === 'am' && hours === 12) {
+      hours = 0;
+    }
+  }
+  
+  if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return {
+      hours,
+      minutes,
+      formatted24: `${pad(hours)}:${pad(minutes)}`,
+      formatted12: `${hours === 0 || hours === 12 ? 12 : hours % 12}:${pad(minutes)} ${hours >= 12 ? 'PM' : 'AM'}`,
+    };
+  }
+  
+  return null;
+}
+

@@ -11,6 +11,8 @@ export const EVENT_TYPES = [
   { value: 'lecture', label: 'Lecture', color: '#3b82f6' },
   { value: 'exam', label: 'Exam', color: '#ef4444' },
   { value: 'deadline', label: 'Deadline', color: '#f59e0b' },
+  { value: 'practical', label: 'Practical', color: '#16a34a' },
+  { value: 'tutorial', label: 'Tutorial', color: '#9333ea' },
 ];
 
 // User roles

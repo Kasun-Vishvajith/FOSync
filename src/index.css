@@ -1,53 +1,88 @@
 @import "tailwindcss";
 
-/* ===== Base / Dark Theme -> Replaced with Noera Theme ===== */
+/* ===== Base / Dark Theme -> Replaced with Luminous Sync Theme ===== */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-serif: 'Lora', ui-serif, Georgia, serif; /* kept for compatibility, though Noera is usually sans */
+  --font-serif: 'Lora', ui-serif, Georgia, serif;
 
-  /* Noera Core Tokens */
-  --color-bg-base: #fcfcfc;
-  --color-surface: #ffffff;
-  --color-surface-hover: #f5f5f5;
-  --color-border: #eaeaea;
+  /* Luminous Sync Color Palette */
+  --color-surface: #fcf9f8;
+  --color-surface-dim: #dcd9d9;
+  --color-surface-bright: #fcf9f8;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f6f3f2;
+  --color-surface-container: #f0edec;
+  --color-surface-container-high: #ebe7e7;
+  --color-surface-container-highest: #e5e2e1;
+  --color-on-surface: #1c1b1b;
+  --color-on-surface-variant: #414755;
+  --color-inverse-surface: #313030;
+  --color-inverse-on-surface: #f3f0ef;
+  --color-outline: #717786;
+  --color-outline-variant: #c1c6d7;
+  --color-surface-tint: #005bc1;
+  --color-primary: #0058bc;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #0070eb;
+  --color-on-primary-container: #fefcff;
+  --color-inverse-primary: #adc6ff;
+  --color-secondary: #6944c6;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #9d7afe;
+  --color-on-secondary-container: #320082;
+  --color-tertiary: #00647c;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #007f9c;
+  --color-on-tertiary-container: #fafdff;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-primary-fixed: #d8e2ff;
+  --color-primary-fixed-dim: #adc6ff;
+  --color-on-primary-fixed: #001a41;
+  --color-on-primary-fixed-variant: #004493;
+  --color-secondary-fixed: #e8ddff;
+  --color-secondary-fixed-dim: #cfbdff;
+  --color-on-secondary-fixed: #21005d;
+  --color-on-secondary-fixed-variant: #5127ad;
+  --color-tertiary-fixed: #b7eaff;
+  --color-tertiary-fixed-dim: #4cd6ff;
+  --color-on-tertiary-fixed: #001f28;
+  --color-on-tertiary-fixed-variant: #004e60;
+  --color-background: #fcf9f8;
+  --color-on-background: #1c1b1b;
+  --color-surface-variant: #e5e2e1;
 
-  --color-text-primary: #111111;
-  --color-text-secondary: #666666;
+  /* Legacy maps for backwards compatibility */
+  --color-bg-base: var(--color-background);
+  --color-surface-hover: var(--color-surface-container-low);
+  --color-border: var(--color-surface-container-high);
+  --color-text-primary: var(--color-on-surface);
+  --color-text-secondary: var(--color-on-surface-variant);
+  --color-accent: var(--color-primary);
+  --color-accent-hover: var(--color-primary-container);
+  --color-accent-subtle: var(--color-primary-fixed);
+  --color-lecture: var(--color-primary);
+  --color-exam: var(--color-error);
+  --color-deadline: var(--color-secondary);
 
-  /* Accent (Noera uses a crisp, vivid blue) */
-  --color-accent: #0f62fe;
-  --color-accent-hover: #0353e9;
-  --color-accent-subtle: #e5f0ff;
-
-  /* Legacy primary map (kept for tailwind arbitrary values if needed, pointing to accent) */
-  --color-primary-50: #f0fdfa; /* keeping a base layout to not break build entirely if used */
-  --color-primary-500: var(--color-accent);
-  --color-primary-600: var(--color-accent-hover);
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  /* Exaggerated Radii Shape Language */
+  --radius-sm: 0.25rem; /* 4px */
+  --radius-md: 0.5rem;  /* 8px */
+  --radius-lg: 0.75rem; /* 12px */
+  --radius-xl: 1rem;    /* 16px */
+  --radius-2xl: 1.5rem; /* 24px - primary cards */
   --radius-pill: 9999px;
 
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.04);
-  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.08);
-  --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.12);
-  
-  /* Auth theme backwards compat mapped to Noera */
-  --color-auth-bg: var(--color-bg-base);
-  --color-auth-card: var(--color-surface);
-  --color-auth-border: var(--color-border);
-  --color-auth-label: var(--color-text-secondary);
-  --color-auth-input-bg: var(--color-surface);
-  --color-auth-input-border: var(--color-border);
-  --color-auth-input-text: var(--color-text-primary);
-  --color-auth-muted: var(--color-text-secondary);
-  
-  /* Legacy Event Colors mapped back for saftey, will be overridden by JS inline styles */
-  --color-lecture: #0f62fe; 
-  --color-exam: #da1e28;
-  --color-deadline: #f1c21b;
+  /* Ambient Shadows */
+  --shadow-soft: 0 4px 20px rgba(0, 91, 193, 0.04);
+  --shadow-hover: 0 8px 30px rgba(0, 91, 193, 0.08);
+  --shadow-elevated: 0 12px 40px rgba(0, 91, 193, 0.12);
+
+  /* Layout Variables */
+  --spacing-sidebar-width: 80px;
+  --spacing-sidebar-width-expanded: 240px;
 }
 
 html {
@@ -199,10 +234,20 @@ h1, h2, h3, h4, h5, h6 {
 
 .badge-deadline {
   background: #fff8e1;
-  color: #f1c21b;
+  color: #b45309;
 }
 
-/* ===== Input Focus Ring (dark pages) ===== */
+.badge-practical {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.badge-tutorial {
+  background: #fdf4ff;
+  color: #9333ea;
+}
+
+/* ===== Input Focus Ring ===== */
 input:focus, select:focus, textarea:focus {
   outline: none;
 }
@@ -210,4 +255,22 @@ input:focus, select:focus, textarea:focus {
 /* ===== Page Transition ===== */
 .page-enter {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* ===== Scrollbar thin ===== */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+/* ===== Modal bottom-sheet slide on mobile ===== */
+@keyframes slideUpSheet {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-sheet-up {
+  animation: slideUpSheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

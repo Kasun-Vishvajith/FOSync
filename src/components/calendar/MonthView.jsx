@@ -8,7 +8,7 @@ import {
   isSameMonth,
   isToday,
 } from 'date-fns';
-import { getDegreeColor } from '../../utils/helpers';
+import { getDegreeColor, getEventTypeColor } from '../../utils/helpers';
 
 export default function MonthView({ currentDate, events, courseMap, onEventClick, onDayClick }) {
   // Build calendar grid (weeks x 7 days)
@@ -31,121 +31,96 @@ export default function MonthView({ currentDate, events, courseMap, onEventClick
   const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-[var(--shadow-soft)] overflow-hidden">
-      {/* Day Headers */}
-      <div className="grid grid-cols-7 border-b border-[var(--color-border)]">
-        {dayHeaders.map((day) => {
-          let textColor = "text-[var(--color-text-secondary)]";
-          if (day === 'Sat') textColor = "text-red-400";
-          if (day === 'Sun') textColor = "text-red-600";
-          
-          return (
-            <div
-              key={day}
-              className={`py-3 text-center text-xs font-semibold ${textColor} uppercase tracking-wider bg-[var(--color-bg-base)]`}
-            >
-              {day}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7">
-        {days.map((day, idx) => {
-          const key = format(day, 'yyyy-MM-dd');
-          const dayEvents = eventsByDate[key] || [];
-          const isCurrentMonth = isSameMonth(day, currentDate);
-          const today = isToday(day);
-          const dayOfWeek = day.getDay();
-          
-          let dayTextColor = isCurrentMonth ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]';
-          if (!today) {
-            if (dayOfWeek === 6) dayTextColor = isCurrentMonth ? 'text-red-400' : 'text-red-400/50';
-            if (dayOfWeek === 0) dayTextColor = isCurrentMonth ? 'text-red-600' : 'text-red-600/50';
-          }
-
-          return (
-            <div
-              key={idx}
-              className={`
-                min-h-[60px] sm:min-h-[75px] p-1.5 sm:p-2 border-b border-r border-[var(--color-border)]
-                transition-colors duration-150
-                ${isCurrentMonth ? 'bg-[var(--color-surface)]' : 'bg-[var(--color-bg-base)]/50'}
-                ${today ? 'bg-[var(--color-accent-subtle)]/50' : ''}
-                hover:bg-[var(--color-surface-hover)] cursor-pointer
-              `}
-              onClick={() => onDayClick && onDayClick(day, dayEvents)}
-            >
-              {/* Day Number */}
-              <div className="flex items-center justify-between mb-1">
-                <span
-                  className={`
-                    text-sm font-medium
-                    ${today ? 'w-7 h-7 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center text-xs shadow-sm' : dayTextColor}
-                  `}
-                >
-                  {format(day, 'd')}
-                </span>
+    <div className="w-full h-full overflow-hidden flex flex-col">
+      <div className="min-w-[600px] h-full flex flex-col gap-4">
+        {/* Day Headers */}
+        <div className="grid grid-cols-7 gap-2 md:gap-4 text-center font-semibold text-sm text-[var(--color-outline)] uppercase tracking-wider">
+          {dayHeaders.map((day) => {
+            let textColor = "text-[var(--color-outline)]";
+            if (day === 'Sat') textColor = "text-[var(--color-error)] opacity-80";
+            if (day === 'Sun') textColor = "text-[var(--color-error)] opacity-80";
+            
+            return (
+              <div key={day} className={textColor}>
+                {day}
               </div>
+            );
+          })}
+        </div>
 
-              {/* Events */}
-              <div className="space-y-0.5">
-                {/* Desktop View: Full title buttons */}
-                <div className="hidden sm:block space-y-0.5">
-                  {dayEvents.slice(0, 3).map((event) => {
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-2 md:gap-4 auto-rows-[minmax(0,1fr)] flex-1 min-h-0">
+          {days.map((day, idx) => {
+            const key = format(day, 'yyyy-MM-dd');
+            const dayEvents = eventsByDate[key] || [];
+            const isCurrentMonth = isSameMonth(day, currentDate);
+            const today = isToday(day);
+            const dayOfWeek = day.getDay();
+            
+            let dayTextColor = isCurrentMonth ? 'text-[var(--color-on-surface-variant)]' : 'text-[var(--color-outline-variant)]';
+            if (!today) {
+              if (dayOfWeek === 6) dayTextColor = isCurrentMonth ? 'text-[var(--color-error)] opacity-80' : 'text-[var(--color-error)] opacity-40';
+              if (dayOfWeek === 0) dayTextColor = isCurrentMonth ? 'text-[var(--color-error)] opacity-80' : 'text-[var(--color-error)] opacity-40';
+            }
+
+            return (
+              <div
+                key={idx}
+                className={`
+                  rounded-[var(--radius-xl)] flex flex-col p-1 sm:p-2 border transition-all duration-200 overflow-hidden min-h-0
+                  ${isCurrentMonth ? 'bg-[var(--color-surface-container-lowest)]' : 'bg-[var(--color-surface-container-low)]/50'}
+                  ${today ? 'bg-[var(--color-primary-container)] border-[var(--color-primary)] text-[var(--color-on-primary-container)] shadow-md' : 'border-[var(--color-surface-container)]'}
+                  hover:border-[var(--color-outline)] cursor-pointer
+                `}
+                onClick={() => onDayClick && onDayClick(day, dayEvents)}
+              >
+                {/* Day Number */}
+                <div className="flex justify-center items-center h-5 min-h-[20px] mb-1 shrink-0">
+                  <span className={`text-sm font-medium leading-none ${today ? 'text-[var(--color-on-primary-container)]' : dayTextColor}`}>
+                    {format(day, 'd')}
+                  </span>
+                </div>
+
+                {/* Events */}
+                <div className="flex-1 overflow-hidden flex flex-col gap-1 pr-0.5">
+                  {dayEvents.slice(0, 2).map((event) => {
                     const course = courseMap[event.course_id];
-                    const colors = getDegreeColor(course?.degrees?.[0] || 'Default');
+                    const colors = getEventTypeColor(event.type);
+                    
                     return (
-                      <button
+                      <div
                         key={event.id}
-                        onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
-                        className="w-full text-left px-1.5 py-0.5 rounded-[var(--radius-sm)] text-xs font-medium truncate transition-all duration-150 hover:scale-[1.02] cursor-pointer border border-transparent hover:shadow-sm"
-                        style={{
-                          backgroundColor: colors.bg,
-                          borderLeft: `2px solid ${colors.border}`,
+                        className="shrink-0 px-1.5 py-1 rounded-md text-[10px] sm:text-xs font-semibold leading-tight truncate border"
+                        style={{ 
+                          backgroundColor: colors.bg, 
                           color: colors.text,
+                          borderColor: colors.border
                         }}
-                        title={`${event.title} — ${course?.aliases?.[0] || event.course_id}`}
+                        title={`${event.title} - ${event.course_id}`}
                       >
-                        {event.title}
-                      </button>
+                        <span className="hidden sm:inline font-bold mr-1">{event.course_id}</span>
+                        <span className="capitalize">{event.type}</span>
+                      </div>
                     );
                   })}
-                  {dayEvents.length > 3 && (
-                    <p className="text-xs text-[var(--color-text-secondary)] pl-1.5 font-medium">
-                      +{dayEvents.length - 3} more
-                    </p>
-                  )}
-                </div>
-
-                {/* Mobile View: Compact colored circles */}
-                <div className="flex flex-wrap gap-1 justify-center mt-1 sm:hidden">
-                  {dayEvents.slice(0, 4).map((event) => {
-                    const course = courseMap[event.course_id];
-                    const colors = getDegreeColor(course?.degrees?.[0] || 'Default');
-                    return (
-                      <button
-                        key={event.id}
-                        onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
-                        className="w-1.5 h-1.5 rounded-full hover:scale-125 transition-transform cursor-pointer shadow-sm"
-                        style={{
-                          backgroundColor: colors.border,
-                        }}
-                        title={event.title}
-                      />
-                    );
-                  })}
-                  {dayEvents.length > 4 && (
-                    <span className="text-[9px] font-bold text-surface-400">
-                      +
-                    </span>
+                  
+                  {/* +X more indicator */}
+                  {dayEvents.length > 2 && (
+                    <div 
+                      className="text-[10px] font-bold text-[var(--color-outline)] hover:text-[var(--color-primary)] transition-colors mt-auto pt-0.5 pb-0.5 text-center bg-[var(--color-surface-container)] hover:bg-[var(--color-surface-container-high)] rounded-md cursor-pointer"
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        if (onDayClick) onDayClick(day, dayEvents);
+                      }}
+                    >
+                      +{dayEvents.length - 2} more
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
-
-
+import Button from '../components/ui/Button';
 
 export default function LoginPage() {
   const [regNo, setRegNo] = useState('');
@@ -41,35 +40,34 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex gradient-bg">
+    <div className="min-h-screen flex bg-[var(--color-surface)]">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 sm:px-16 h-screen overflow-hidden relative">
+        {/* Decorative Background Blur */}
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[var(--color-primary-container)]/20 rounded-full blur-3xl mix-blend-multiply pointer-events-none" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[var(--color-secondary-container)]/20 rounded-full blur-3xl mix-blend-multiply pointer-events-none" />
 
-      {/* ════════════════════════════════
-          CENTERED FORM
-          ════════════════════════════════ */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 sm:px-16 h-screen overflow-hidden">
-
-        <div className="w-full max-w-md auth-card p-8 sm:p-10 animate-slide-in-right">
+        <div className="w-full max-w-md bg-[var(--color-surface-container-lowest)] shadow-[var(--shadow-elevated)] rounded-[var(--radius-3xl)] p-8 sm:p-10 animate-fade-in relative z-10 border border-[var(--color-surface-container)]">
           
           {/* Typography Logo */}
           <div className="flex justify-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-primary-600 shadow-md flex items-center justify-center">
+            <div className="w-12 h-12 rounded-[var(--radius-xl)] bg-[var(--color-primary)] shadow-md flex items-center justify-center">
               <span className="font-serif text-2xl font-bold text-white italic">F</span>
             </div>
           </div>
 
           {/* Heading */}
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-serif font-bold text-surface-100 tracking-tight">
+            <h2 className="text-3xl font-bold text-[var(--color-on-surface)] tracking-tight">
               Welcome back
             </h2>
-            <p className="mt-2 text-surface-400 text-sm font-medium">
+            <p className="mt-2 text-[var(--color-on-surface-variant)] text-sm font-medium">
               Sign in to your student account
             </p>
           </div>
 
           {/* Error alert */}
           {error && (
-            <div className="mb-6 px-4 py-3 rounded-none text-sm font-semibold border-2 border-red-600 bg-red-50 text-red-600 animate-slide-down flex items-start gap-2">
+            <div className="mb-6 px-4 py-3 rounded-xl text-sm font-semibold border-2 border-[var(--color-error)] bg-[var(--color-error-container)] text-[var(--color-on-error-container)] animate-fade-in flex items-start gap-2">
               <span className="mt-0.5">⚠</span>
               <span>{error}</span>
             </div>
@@ -80,7 +78,7 @@ export default function LoginPage() {
 
             {/* Reg No */}
             <div className="space-y-1.5">
-              <label htmlFor="login-reg" className="block text-sm font-medium text-surface-200">
+              <label htmlFor="login-reg" className="block text-sm font-semibold text-[var(--color-on-surface)]">
                 Registration Number
               </label>
               <input
@@ -91,14 +89,13 @@ export default function LoginPage() {
                 value={regNo}
                 onChange={(e) => setRegNo(e.target.value)}
                 required
-                className="auth-input w-full px-4 py-3 text-sm font-medium"
+                className="w-full px-4 py-3 text-sm font-medium bg-[var(--color-surface-container)] border-none rounded-[var(--radius-lg)] text-[var(--color-on-surface)] focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-[var(--color-surface-container-lowest)] transition-colors placeholder:text-[var(--color-outline-variant)]"
               />
-
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="login-pw" className="block text-sm font-medium text-surface-200">
+              <label htmlFor="login-pw" className="block text-sm font-semibold text-[var(--color-on-surface)]">
                 Password
               </label>
               <div className="relative">
@@ -110,12 +107,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="auth-input w-full px-4 py-3 pr-12 text-sm font-medium"
+                  className="w-full px-4 py-3 pr-12 text-sm font-medium bg-[var(--color-surface-container)] border-none rounded-[var(--radius-lg)] text-[var(--color-on-surface)] focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-[var(--color-surface-container-lowest)] transition-colors placeholder:text-[var(--color-outline-variant)]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-100 transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--color-outline)] hover:text-[var(--color-on-surface)] transition-colors cursor-pointer"
                   tabIndex={-1}
                 >
                   {showPw ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
@@ -130,51 +127,32 @@ export default function LoginPage() {
                 id="login-remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-surface-700 text-primary-600 focus:ring-primary-600"
+                className="w-4 h-4 rounded border-[var(--color-outline-variant)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
               />
-              <label htmlFor="login-remember" className="text-sm font-medium text-surface-400 select-none cursor-pointer">
+              <label htmlFor="login-remember" className="text-sm font-medium text-[var(--color-on-surface-variant)] select-none cursor-pointer">
                 Remember me on this device
               </label>
             </div>
 
             {/* Submit */}
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="
-                w-full flex items-center justify-center gap-2
-                py-3.5 rounded-xl text-sm font-medium text-white
-                transition-all duration-200
-                bg-primary-600 border border-transparent
-                shadow-sm hover:bg-primary-700 active:bg-primary-800 hover:-translate-y-0.5
-                disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none
-                cursor-pointer
-              "
+              loading={loading}
+              className="w-full py-3.5 mt-2"
+              size="lg"
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  Signing in…
-                </>
-              ) : (
-                <>
-                  Sign In
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+              Sign In
+              {!loading && <ArrowRight className="w-4 h-4 ml-1" />}
+            </Button>
           </form>
 
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-surface-700" />
+              <div className="w-full border-t border-[var(--color-surface-container-highest)]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-transparent text-xs text-surface-500 font-medium">
+              <span className="px-3 bg-[var(--color-surface-container-lowest)] text-xs text-[var(--color-outline)] font-medium">
                 New to FOSync?
               </span>
             </div>
@@ -183,20 +161,13 @@ export default function LoginPage() {
           {/* Signup link */}
           <Link
             to="/signup"
-            className="
-              w-full flex items-center justify-center gap-2
-              py-3 rounded-xl text-sm font-medium bg-surface-900
-              border border-surface-700 text-surface-200
-              shadow-sm hover:bg-surface-800 active:bg-surface-700 hover:-translate-y-0.5
-              transition-all duration-200
-              cursor-pointer
-            "
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-[var(--radius-2xl)] text-sm font-medium bg-[var(--color-surface)] border border-[var(--color-surface-container)] text-[var(--color-on-surface)] shadow-[var(--shadow-soft)] hover:bg-[var(--color-surface-container-low)] active:scale-[0.98] transition-all duration-200 cursor-pointer"
           >
             Create an account
           </Link>
 
           {/* Footer note */}
-          <p className="text-center text-xs text-surface-500 font-bold mt-8">
+          <p className="text-center text-xs text-[var(--color-outline)] font-bold mt-8">
             Only approved FOS students can register.
           </p>
         </div>

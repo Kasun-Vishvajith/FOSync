@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Sparkles, Calendar, BookOpen, Clock, Loader2, CheckCircle2 } from 'lucide-react';
-import { getAllCourses, addEvent } from '../../lib/firestore';
+import { getAllCourses } from '../../lib/firestore';
 import { useAuth } from '../../contexts/AuthContext';
+import { useEvents } from '../../contexts/EventsContext';
 import { matchCourse } from '../../utils/courseMatcher';
 import { parseNaturalLanguageEvent } from '../../utils/nlpParser';
+import { normalizeText, matchKeywordGroup, KEYWORD_GROUPS } from '../../utils/chatMatcher';
 import { format } from 'date-fns';
 import Button from '../ui/Button';
 
-export default function QuickAddChat({ onEventAdded, onSendMessage, initialInput = '' }) {
+export default function QuickAddChat({ onSendMessage, initialInput = '' }) {
   const { userProfile } = useAuth();
+  const { addNewEvent } = useEvents();
   const [inputStr, setInputStr] = useState(initialInput);
   const [courses, setCourses] = useState([]);
   const [parsedData, setParsedData] = useState(null);
@@ -41,12 +44,10 @@ export default function QuickAddChat({ onEventAdded, onSendMessage, initialInput
   }, [inputStr, courses]);
 
   const checkIsQuery = (str) => {
-    const lower = str.toLowerCase();
-    return lower.includes('timeline') || 
-           lower.includes('timleine') || 
-           lower.includes('exam') || 
-           lower.includes('deadline') || 
-           lower.includes('due');
+    const normalized = normalizeText(str);
+    return matchKeywordGroup(normalized, KEYWORD_GROUPS.timeline, true) ||
+           matchKeywordGroup(normalized, KEYWORD_GROUPS.exam, true) ||
+           matchKeywordGroup(normalized, KEYWORD_GROUPS.deadline, true);
   };
 
   async function handleSubmit(e) {
@@ -67,12 +68,11 @@ export default function QuickAddChat({ onEventAdded, onSendMessage, initialInput
 
     setIsAdding(true);
     try {
-      await addEvent({
+      await addNewEvent({
         title: parsedData.title,
         date: parsedData.date,
         type: parsedData.type,
         course_id: parsedData.courseMatch.course.course_id,
-        created_by: userProfile?.id || 'System',
       });
       
       if (onSendMessage) {
@@ -91,10 +91,8 @@ export default function QuickAddChat({ onEventAdded, onSendMessage, initialInput
       setParsedData(null);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      
-      if (onEventAdded) onEventAdded();
     } catch (error) {
-      console.error("Error adding event:", error);
+      console.error('Error adding event:', error);
     } finally {
       setIsAdding(false);
     }
@@ -130,7 +128,7 @@ export default function QuickAddChat({ onEventAdded, onSendMessage, initialInput
       }
 
       // 3. If it's a time suggestion
-      const timePills = ['08:00 AM', '10:00 AM', '01:00 PM', '03:00 PM'];
+      const timePills = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM'];
       if (timePills.includes(text)) {
         const timeRegex = new RegExp(timePills.map(t => t.replace(' ', '\\s*')).join('|'), 'i');
         if (timeRegex.test(prev)) {
@@ -214,7 +212,7 @@ export default function QuickAddChat({ onEventAdded, onSendMessage, initialInput
               <div className="animate-fade-in space-y-2.5">
                 <p className="text-xs font-semibold text-[#0f62fe]">What time?</p>
                 <div className="flex flex-wrap gap-2">
-                  {['08:00 AM', '10:00 AM', '01:00 PM', '03:00 PM'].map(t => (
+                  {['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM'].map(t => (
                     <button 
                       key={t}
                       onClick={() => handleAppend(t)}

@@ -218,11 +218,16 @@ export async function getEventsForCourses(courseIds) {
   for (const chunk of chunks) {
     const q = query(
       collection(db, 'events'),
-      where('course_id', 'in', chunk),
-      orderBy('date', 'asc')
+      where('course_id', 'in', chunk)
     );
     const snap = await getDocs(q);
     results.push(...snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   }
-  return results;
+  
+  // Sort in memory by date to avoid requiring a composite Firestore index
+  return results.sort((a, b) => {
+    const da = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+    const db = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+    return da - db;
+  });
 }

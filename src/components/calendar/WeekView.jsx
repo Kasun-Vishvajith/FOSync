@@ -5,7 +5,7 @@ import {
   isToday,
   isSameDay,
 } from 'date-fns';
-import { getDegreeColor } from '../../utils/helpers';
+import { getDegreeColor, getEventTypeColor } from '../../utils/helpers';
 import { TIME_SLOTS } from '../../utils/constants';
 
 export default function WeekView({ currentDate, events, courseMap, onEventClick, onDayClick }) {
@@ -23,33 +23,33 @@ export default function WeekView({ currentDate, events, courseMap, onEventClick,
   });
 
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-[var(--shadow-soft)] overflow-hidden overflow-x-auto">
-      <div className="min-w-[700px]">
+    <div className="w-full flex-1 min-h-0 flex flex-col overflow-x-auto custom-scrollbar">
+      <div className="min-w-[700px] flex-1 min-h-0 flex flex-col">
         {/* Day Headers */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[var(--color-border)] bg-[var(--color-bg-base)]">
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[var(--color-surface-container)]">
           <div className="py-3" /> {/* Time column spacer */}
           {weekDays.map((day) => {
             const today = isToday(day);
             const dayOfWeek = day.getDay();
             
-            let dayTextColor = "text-[var(--color-text-secondary)]";
-            let numTextColor = "text-[var(--color-text-primary)]";
+            let dayTextColor = "text-[var(--color-outline)]";
+            let numTextColor = "text-[var(--color-on-surface-variant)]";
             
             if (dayOfWeek === 6) {
-              dayTextColor = "text-red-400";
-              numTextColor = "text-red-400";
+              dayTextColor = "text-[var(--color-error)] opacity-80";
+              numTextColor = "text-[var(--color-error)] opacity-80";
             }
             if (dayOfWeek === 0) {
-              dayTextColor = "text-red-600";
-              numTextColor = "text-red-600";
+              dayTextColor = "text-[var(--color-error)] opacity-80";
+              numTextColor = "text-[var(--color-error)] opacity-80";
             }
 
             return (
               <div
                 key={day.toISOString()}
                 className={`
-                  py-3 text-center border-l border-[var(--color-border)]
-                  ${today ? 'bg-[var(--color-accent-subtle)]/50' : ''}
+                  py-3 text-center border-l border-[var(--color-surface-container)]
+                  ${today ? 'bg-[var(--color-surface-container-low)]' : ''}
                 `}
               >
                 <p className={`text-xs font-semibold ${dayTextColor} uppercase tracking-wider`}>
@@ -60,7 +60,7 @@ export default function WeekView({ currentDate, events, courseMap, onEventClick,
                     text-lg font-bold mt-0.5
                     ${
                       today
-                        ? 'w-8 h-8 mx-auto rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center text-sm shadow-sm'
+                        ? 'w-8 h-8 mx-auto rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-sm shadow-md'
                         : numTextColor
                     }
                   `}
@@ -73,12 +73,12 @@ export default function WeekView({ currentDate, events, courseMap, onEventClick,
         </div>
 
         {/* Time Grid */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] max-h-[600px] overflow-y-auto">
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] flex-1 min-h-0 overflow-y-auto custom-scrollbar relative">
           {TIME_SLOTS.map((slot) => (
             <div key={slot.hour} className="contents">
               {/* Time Label */}
-              <div className="h-16 flex items-start justify-end pr-2 pt-0.5 border-b border-surface-700/20">
-                <span className="text-xs text-surface-500 font-medium">
+              <div className="h-20 flex items-start justify-end pr-3 pt-1 border-b border-[var(--color-surface-container)]">
+                <span className="text-xs text-[var(--color-outline-variant)] font-medium">
                   {slot.label}
                 </span>
               </div>
@@ -97,22 +97,22 @@ export default function WeekView({ currentDate, events, courseMap, onEventClick,
                   <div
                     key={`${key}-${slot.hour}`}
                     className={`
-                      h-16 border-l border-b border-[var(--color-border)] p-0.5 relative hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors
-                      ${today ? 'bg-[var(--color-accent-subtle)]/50' : ''}
+                      h-20 border-l border-b border-[var(--color-surface-container)] p-1 relative hover:bg-[var(--color-surface-container-low)] cursor-pointer transition-colors
+                      ${today ? 'bg-[var(--color-surface-container-low)]/50' : ''}
                     `}
                     onClick={() => onDayClick && onDayClick(day, dayEvents)}
                   >
                     {slotEvents.map((event) => {
                       const course = courseMap[event.course_id];
-                      const colors = getDegreeColor(course?.degrees?.[0] || 'Default');
+                      const colors = getEventTypeColor(event.type);
                       return (
                         <button
                           key={event.id}
                           onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
-                          className="w-full text-left px-1.5 py-1 rounded-[var(--radius-sm)] text-xs font-medium truncate transition-all duration-150 hover:scale-[1.02] mb-0.5 cursor-pointer border border-transparent hover:shadow-sm"
+                          className="w-full text-left px-2 py-1.5 rounded-lg text-xs font-semibold truncate transition-all duration-150 hover:scale-[1.02] mb-1 cursor-pointer border shadow-sm"
                           style={{
                             backgroundColor: colors.bg,
-                            borderLeft: `2px solid ${colors.border}`,
+                            borderColor: colors.border,
                             color: colors.text,
                           }}
                         >
@@ -136,17 +136,17 @@ export default function WeekView({ currentDate, events, courseMap, onEventClick,
           });
           if (unslottedEvents.length === 0) return null;
           return (
-            <div className="border-t border-[var(--color-border)] p-3">
-              <p className="text-xs text-[var(--color-text-secondary)] font-semibold mb-2 uppercase tracking-wider">All Day</p>
+            <div className="border-t border-[var(--color-surface-container-high)] p-4 bg-[var(--color-surface-container-lowest)]">
+              <p className="text-xs text-[var(--color-outline)] font-semibold mb-3 uppercase tracking-wider">All Day</p>
               <div className="flex flex-wrap gap-2">
                 {unslottedEvents.map((event) => {
                   const course = courseMap[event.course_id];
-                  const colors = getDegreeColor(course?.degrees?.[0] || 'Default');
+                  const colors = getEventTypeColor(event.type);
                   return (
                     <button
                       key={event.id}
                       onClick={() => onEventClick(event)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:scale-105 cursor-pointer shadow-sm"
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 cursor-pointer shadow-[var(--shadow-soft)]"
                       style={{
                         backgroundColor: colors.bg,
                         border: `1px solid ${colors.border}`,

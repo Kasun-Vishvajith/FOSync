@@ -40,19 +40,19 @@ export default function AdminPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3 animate-fade-in">
-        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-primary-600/20">
+        <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center shadow-lg shadow-primary-600/20">
           <Shield className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-serif font-bold text-surface-100">Admin Panel</h1>
-          <p className="text-sm text-surface-400">
+          <h1 className="text-3xl font-sans tracking-tight font-bold text-[var(--color-on-surface)]">Admin Panel</h1>
+          <p className="text-sm text-[var(--color-on-surface-variant)]">
             {isSuperAdmin ? 'Super Admin' : 'Admin'} — Manage courses, events & users
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl bg-surface-800/60 border border-surface-700/50 overflow-x-auto">
+      <div className="flex gap-1 p-1 rounded-xl bg-[var(--color-surface-container)]/60 border border-[var(--color-surface-container-high)]/50 overflow-x-auto">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -62,8 +62,8 @@ export default function AdminPage() {
               transition-all duration-200 cursor-pointer
               ${
                 activeTab === id
-                  ? 'bg-primary-600 text-white shadow-md shadow-primary-600/25'
-                  : 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'
+                  ? 'bg-[var(--color-primary)] text-white shadow-md shadow-primary-600/25'
+                  : 'text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-high)]/50'
               }
             `}
           >
@@ -178,13 +178,13 @@ function EventsTab() {
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-outline)]" />
           <input
             type="text"
             placeholder="Search events..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-800/80 border border-surface-700 text-surface-100 text-sm placeholder:text-surface-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--color-surface-container)]/80 border border-[var(--color-surface-container-high)] text-[var(--color-on-surface)] text-sm placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-primary-500/20 transition-all"
           />
         </div>
         <Button onClick={openCreate}>
@@ -197,11 +197,11 @@ function EventsTab() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-xl bg-surface-800/50 animate-pulse" />
+            <div key={i} className="h-16 rounded-xl bg-[var(--color-surface-container)]/50 animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-surface-500">
+        <div className="text-center py-12 text-[var(--color-outline)]">
           <CalendarPlus className="w-12 h-12 mx-auto mb-3 opacity-40" />
           <p>No events found</p>
         </div>
@@ -212,15 +212,15 @@ function EventsTab() {
             return (
               <div
                 key={event.id}
-                className="glass rounded-xl px-4 py-3 flex items-center justify-between gap-4"
+                className="bg-[var(--color-surface-container-lowest)] border border-[var(--color-surface-container)] shadow-[var(--shadow-soft)] rounded-xl px-4 py-3 flex items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span className={`badge-${event.type} px-2.5 py-1 rounded-md text-xs font-semibold shrink-0`}>
                     {capitalize(event.type)}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-surface-200 truncate">{event.title}</p>
-                    <p className="text-xs text-surface-500">
+                    <p className="text-sm font-medium text-[var(--color-on-surface)] truncate">{event.title}</p>
+                    <p className="text-xs text-[var(--color-outline)]">
                       {course?.aliases?.[0] || event.course_id} • {formatDate(event.date)}
                     </p>
                   </div>
@@ -228,13 +228,13 @@ function EventsTab() {
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => openEdit(event)}
-                    className="p-2 rounded-lg hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors cursor-pointer"
+                    className="p-2 rounded-lg hover:bg-[var(--color-surface-container-high)] text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] transition-colors cursor-pointer"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(event.id)}
-                    className="p-2 rounded-lg hover:bg-red-500/10 text-surface-400 hover:text-red-400 transition-colors cursor-pointer"
+                    className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--color-on-surface-variant)] hover:text-red-400 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -468,35 +468,35 @@ function CoursesTab() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-surface-800/50 animate-pulse" />
+            <div key={i} className="h-20 rounded-xl bg-[var(--color-surface-container)]/50 animate-pulse" />
           ))}
         </div>
       ) : courses.length === 0 ? (
-        <div className="text-center py-12 text-surface-500">
+        <div className="text-center py-12 text-[var(--color-outline)]">
           <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-40" />
           <p>No courses yet</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
           {courses.map((course) => (
-            <div key={course.id} className="glass rounded-xl p-4">
+            <div key={course.id} className="bg-[var(--color-surface-container-lowest)] border border-[var(--color-surface-container)] shadow-[var(--shadow-soft)] rounded-xl p-4">
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>
-                  <p className="text-base font-semibold text-surface-100">{course.course_id}</p>
-                  <p className="text-sm text-surface-400">
+                  <p className="text-base font-semibold text-[var(--color-on-surface)]">{course.course_id}</p>
+                  <p className="text-sm text-[var(--color-on-surface-variant)]">
                     {course.aliases?.join(' / ') || 'No aliases'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => openEdit(course)}
-                    className="p-1.5 rounded-lg hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg hover:bg-[var(--color-surface-container-high)] text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] transition-colors cursor-pointer"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(course.course_id)}
-                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-surface-400 hover:text-red-400 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--color-on-surface-variant)] hover:text-red-400 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -504,17 +504,17 @@ function CoursesTab() {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {course.degrees?.map((d) => (
-                  <span key={d} className="px-2 py-0.5 rounded-md bg-surface-700 text-surface-300 text-xs">
+                  <span key={d} className="px-2 py-0.5 rounded-md bg-[var(--color-surface-container-high)] text-[var(--color-on-surface-variant)] text-xs">
                     {d}
                   </span>
                 ))}
                 {course.year && (
-                  <span className="px-2 py-0.5 rounded-md bg-surface-700 text-surface-300 text-xs">
+                  <span className="px-2 py-0.5 rounded-md bg-[var(--color-surface-container-high)] text-[var(--color-on-surface-variant)] text-xs">
                     Year {course.year}
                   </span>
                 )}
                 {course.semester && (
-                  <span className="px-2 py-0.5 rounded-md bg-primary-500/15 text-primary-400 text-xs border border-primary-500/20">
+                  <span className="px-2 py-0.5 rounded-md bg-primary-500/15 text-[var(--color-primary)] text-xs border border-[var(--color-primary)]/20">
                     Sem {course.semester}
                   </span>
                 )}
@@ -583,7 +583,7 @@ function CoursesTab() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-surface-300">Degrees</label>
+            <label className="block text-sm font-medium text-[var(--color-on-surface-variant)]">Degrees</label>
             <div className="flex flex-wrap gap-2">
               {DEGREES.map((deg) => (
                 <button
@@ -594,8 +594,8 @@ function CoursesTab() {
                     px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer
                     ${
                       form.degrees.includes(deg)
-                        ? 'bg-primary-600/20 text-primary-300 border border-primary-500/30'
-                        : 'bg-surface-700 text-surface-400 border border-surface-600 hover:border-surface-500'
+                        ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border border-[var(--color-primary)]/30'
+                        : 'bg-[var(--color-surface-container-high)] text-[var(--color-on-surface-variant)] border border-[var(--color-outline-variant)] hover:border-surface-500'
                     }
                   `}
                 >
@@ -610,9 +610,9 @@ function CoursesTab() {
               type="checkbox"
               checked={form.is_elective}
               onChange={(e) => setForm({ ...form, is_elective: e.target.checked })}
-              className="w-4 h-4 rounded border-surface-600 bg-surface-800 text-primary-600 focus:ring-primary-500"
+              className="w-4 h-4 rounded border-[var(--color-outline-variant)] bg-[var(--color-surface-container)] text-primary-600 focus:ring-primary-500"
             />
-            <span className="text-sm text-surface-300">This is an elective course</span>
+            <span className="text-sm text-[var(--color-on-surface-variant)]">This is an elective course</span>
           </label>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -636,14 +636,14 @@ function CoursesTab() {
         title="Bulk Upload Courses (CSV)"
       >
         <div className="space-y-4">
-          <div className="p-3 rounded-lg bg-surface-800 border border-surface-700">
-            <p className="text-sm text-surface-300 mb-1">
+          <div className="p-3 rounded-lg bg-[var(--color-surface-container)] border border-[var(--color-surface-container-high)]">
+            <p className="text-sm text-[var(--color-on-surface-variant)] mb-1">
               Expected CSV columns:
             </p>
-            <code className="text-xs text-primary-400 block break-all mb-2">
+            <code className="text-xs text-[var(--color-primary)] block break-all mb-2">
               code,name,is data sceince,is stat,is applied stat,isisdustrial stat,is elective,semester,credits,year
             </code>
-            <p className="text-xs text-surface-500">
+            <p className="text-xs text-[var(--color-outline)]">
               Example: <br/>
               DSC321,Data Mining,1,0,1,0,0,5,3,3
             </p>
@@ -653,7 +653,7 @@ function CoursesTab() {
             value={courseCsvData}
             onChange={(e) => setCourseCsvData(e.target.value)}
             placeholder={`code,name,is data sceince,is stat,is applied stat,isisdustrial stat,is elective,semester,credits,year\nDSC321,Data Mining,1,0,1,0,0,5,3,3`}
-            className="w-full px-3.5 py-2.5 rounded-lg bg-surface-800/80 border border-surface-700 text-surface-100 text-sm font-mono placeholder:text-surface-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all resize-none"
+            className="w-full px-3.5 py-2.5 rounded-lg bg-[var(--color-surface-container)]/80 border border-[var(--color-surface-container-high)] text-[var(--color-on-surface)] text-sm font-mono placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-primary-500/20 transition-all resize-none"
           />
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setShowCsvModal(false)}>
@@ -726,20 +726,20 @@ function UsersTab() {
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-outline)]" />
         <input
           type="text"
           placeholder="Search users..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-800/80 border border-surface-700 text-surface-100 text-sm placeholder:text-surface-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--color-surface-container)]/80 border border-[var(--color-surface-container-high)] text-[var(--color-on-surface)] text-sm placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-primary-500/20 transition-all"
         />
       </div>
 
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-xl bg-surface-800/50 animate-pulse" />
+            <div key={i} className="h-16 rounded-xl bg-[var(--color-surface-container)]/50 animate-pulse" />
           ))}
         </div>
       ) : (
@@ -747,15 +747,15 @@ function UsersTab() {
           {filtered.map((user) => (
             <div
               key={user.id}
-              className="glass rounded-xl px-4 py-3 flex items-center justify-between gap-4"
+              className="bg-[var(--color-surface-container-lowest)] border border-[var(--color-surface-container)] shadow-[var(--shadow-soft)] rounded-xl px-4 py-3 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-white text-sm font-bold shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white text-sm font-bold shrink-0">
                   {user.name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-surface-200 truncate">{user.name}</p>
-                  <p className="text-xs text-surface-500">{user.reg_no} • {user.degree}</p>
+                  <p className="text-sm font-medium text-[var(--color-on-surface)] truncate">{user.name}</p>
+                  <p className="text-xs text-[var(--color-outline)]">{user.reg_no} • {user.degree}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -763,8 +763,8 @@ function UsersTab() {
                   className={`
                     px-2.5 py-1 rounded-md text-xs font-semibold
                     ${user.role === 'super_admin' ? 'bg-purple-500/15 text-purple-400 border border-purple-500/20' :
-                      user.role === 'admin' ? 'bg-primary-500/15 text-primary-400 border border-primary-500/20' :
-                      'bg-surface-700 text-surface-400'}
+                      user.role === 'admin' ? 'bg-primary-500/15 text-[var(--color-primary)] border border-[var(--color-primary)]/20' :
+                      'bg-[var(--color-surface-container-high)] text-[var(--color-on-surface-variant)]'}
                   `}
                 >
                   {capitalize(user.role)}
@@ -780,7 +780,7 @@ function UsersTab() {
                     </Button>
                     <button
                       onClick={() => handleDeleteUser(user)}
-                      className="p-2 rounded-lg hover:bg-red-500/10 text-surface-400 hover:text-red-400 transition-colors cursor-pointer"
+                      className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--color-on-surface-variant)] hover:text-red-400 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -878,13 +878,13 @@ function AllowedUsersTab() {
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-outline)]" />
           <input
             type="text"
             placeholder="Search allowed users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-800/80 border border-surface-700 text-surface-100 text-sm placeholder:text-surface-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--color-surface-container)]/80 border border-[var(--color-surface-container-high)] text-[var(--color-on-surface)] text-sm placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-primary-500/20 transition-all"
           />
         </div>
         <div className="flex gap-2">
@@ -900,7 +900,7 @@ function AllowedUsersTab() {
       </div>
 
       {/* Count */}
-      <p className="text-sm text-surface-400">
+      <p className="text-sm text-[var(--color-on-surface-variant)]">
         {filtered.length} allowed user{filtered.length !== 1 ? 's' : ''}
       </p>
 
@@ -908,7 +908,7 @@ function AllowedUsersTab() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 rounded-xl bg-surface-800/50 animate-pulse" />
+            <div key={i} className="h-12 rounded-xl bg-[var(--color-surface-container)]/50 animate-pulse" />
           ))}
         </div>
       ) : (
@@ -916,16 +916,16 @@ function AllowedUsersTab() {
           {filtered.map((user) => (
             <div
               key={user.id}
-              className="glass rounded-lg px-4 py-2.5 flex items-center justify-between"
+              className="bg-[var(--color-surface-container-lowest)] border border-[var(--color-surface-container)] shadow-[var(--shadow-soft)] rounded-lg px-4 py-2.5 flex items-center justify-between"
             >
               <div>
-                <span className="text-sm font-medium text-surface-200">{user.reg_no}</span>
-                <span className="mx-2 text-surface-600">•</span>
-                <span className="text-sm text-surface-400">{user.degree}</span>
+                <span className="text-sm font-medium text-[var(--color-on-surface)]">{user.reg_no}</span>
+                <span className="mx-2 text-[var(--color-outline)]">•</span>
+                <span className="text-sm text-[var(--color-on-surface-variant)]">{user.degree}</span>
               </div>
               <button
                 onClick={() => handleRemove(user.reg_no)}
-                className="p-1.5 rounded-lg hover:bg-red-500/10 text-surface-500 hover:text-red-400 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--color-outline)] hover:text-red-400 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -975,11 +975,11 @@ function AllowedUsersTab() {
         title="Bulk Upload (CSV)"
       >
         <div className="space-y-4">
-          <div className="p-3 rounded-lg bg-surface-800 border border-surface-700">
-            <p className="text-sm text-surface-300 mb-1">
-              Format: <code className="text-primary-400">reg_no, degree</code> — one per line
+          <div className="p-3 rounded-lg bg-[var(--color-surface-container)] border border-[var(--color-surface-container-high)]">
+            <p className="text-sm text-[var(--color-on-surface-variant)] mb-1">
+              Format: <code className="text-[var(--color-primary)]">reg_no, degree</code> — one per line
             </p>
-            <p className="text-xs text-surface-500">
+            <p className="text-xs text-[var(--color-outline)]">
               Example: 2022s19001, Statistics
             </p>
           </div>
@@ -988,7 +988,7 @@ function AllowedUsersTab() {
             value={csvData}
             onChange={(e) => setCsvData(e.target.value)}
             placeholder={`2022s19001, Statistics\n2022s19002, Data Science\n2022s19003, Statistics`}
-            className="w-full px-3.5 py-2.5 rounded-lg bg-surface-800/80 border border-surface-700 text-surface-100 text-sm font-mono placeholder:text-surface-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all resize-none"
+            className="w-full px-3.5 py-2.5 rounded-lg bg-[var(--color-surface-container)]/80 border border-[var(--color-surface-container-high)] text-[var(--color-on-surface)] text-sm font-mono placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-primary-500/20 transition-all resize-none"
           />
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setShowUploadModal(false)}>
@@ -1012,6 +1012,9 @@ function CourseLinkerTab() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [draggedCourseId, setDraggedCourseId] = useState(null);
+  const [dragStartPos, setDragStartPos] = useState(null);
+  const [dragCurrentPos, setDragCurrentPos] = useState(null);
+  const [newlyLinkedIds, setNewlyLinkedIds] = useState([]);
 
   useEffect(() => {
     loadCourses();
@@ -1029,26 +1032,49 @@ function CourseLinkerTab() {
     }
   }
 
+  function clearDragState() {
+    setDraggedCourseId(null);
+    setDragStartPos(null);
+    setDragCurrentPos(null);
+  }
+
   async function handleDrop(e, targetCourseId) {
     e.preventDefault();
     if (!draggedCourseId || draggedCourseId === targetCourseId) {
-      setDraggedCourseId(null);
+      clearDragState();
       return;
     }
     
     const targetCourse = courses.find(c => c.course_id === targetCourseId);
     if (targetCourse?.linked_courses?.includes(draggedCourseId)) {
-      setDraggedCourseId(null);
+      clearDragState();
       return;
     }
 
     try {
-      await linkCourses(draggedCourseId, targetCourseId);
+      const draggedId = draggedCourseId;
+      await linkCourses(draggedId, targetCourseId);
+      
+      // Trigger ripple effect
+      setNewlyLinkedIds([draggedId, targetCourseId]);
+      setTimeout(() => setNewlyLinkedIds([]), 1500);
+
       await loadCourses();
     } catch (err) {
       console.error(err);
     }
-    setDraggedCourseId(null);
+    clearDragState();
+  }
+
+  function handleDragStart(e, courseId) {
+    setDraggedCourseId(courseId);
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDragStartPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+  }
+
+  function handleDrag(e) {
+    if (e.clientX === 0 && e.clientY === 0) return; // Ignore drag end artifact
+    setDragCurrentPos({ x: e.clientX, y: e.clientY });
   }
 
   async function handleUnlink(courseIdA, courseIdB) {
@@ -1065,63 +1091,108 @@ function CourseLinkerTab() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-64 bg-surface-800/50 rounded-xl animate-pulse" />
+          <div key={i} className="h-64 bg-[var(--color-surface-container)]/50 rounded-xl animate-pulse" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="p-4 rounded-xl bg-surface-800 border border-surface-700">
-        <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2 mb-2">
-          <LinkIcon className="w-5 h-5 text-primary-400" />
+    <div className="space-y-4 relative">
+      {/* Live Wire Thread */}
+      {dragStartPos && dragCurrentPos && (
+        <svg className="fixed inset-0 pointer-events-none z-[100] w-full h-full">
+          <line
+            x1={dragStartPos.x}
+            y1={dragStartPos.y}
+            x2={dragCurrentPos.x}
+            y2={dragCurrentPos.y}
+            stroke="#22c55e"
+            strokeWidth="3"
+            strokeDasharray="6,6"
+            className="animate-pulse"
+          />
+        </svg>
+      )}
+
+      <div className="p-4 rounded-xl bg-[var(--color-surface-container)] border border-[var(--color-surface-container-high)]">
+        <h2 className="text-lg font-semibold text-[var(--color-on-surface)] flex items-center gap-2 mb-2">
+          <LinkIcon className="w-5 h-5 text-[var(--color-primary)]" />
           Course Linker
         </h2>
-        <p className="text-sm text-surface-300">
+        <p className="text-sm text-[var(--color-on-surface-variant)]">
           Drag and drop a course onto another course to link them together. Linked courses will share the same events on the dashboard calendar.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
         {DEGREES.map((degree) => {
-          const degreeCourses = courses.filter((c) => c.degrees?.includes(degree));
+          let degreeCourses = courses.filter((c) => c.degrees?.includes(degree));
+          
+          // Sort linked courses to the top
+          degreeCourses.sort((a, b) => {
+            const aHasLinks = (a.linked_courses?.length || 0) > 0;
+            const bHasLinks = (b.linked_courses?.length || 0) > 0;
+            if (aHasLinks && !bHasLinks) return -1;
+            if (!aHasLinks && bHasLinks) return 1;
+            return a.course_id.localeCompare(b.course_id);
+          });
           
           return (
             <div key={degree} className="flex flex-col gap-3 min-w-[280px]">
-              <div className="px-3 py-2 rounded-lg bg-surface-800 border border-surface-700">
-                <h3 className="font-medium text-surface-200 text-sm">{degree}</h3>
-                <p className="text-xs text-surface-500">{degreeCourses.length} courses</p>
+              <div className="px-3 py-2 rounded-lg bg-[var(--color-surface-container)] border border-[var(--color-surface-container-high)]">
+                <h3 className="font-medium text-[var(--color-on-surface)] text-sm">{degree}</h3>
+                <p className="text-xs text-[var(--color-outline)]">{degreeCourses.length} courses</p>
               </div>
 
               <div className="flex flex-col gap-2">
-                {degreeCourses.map((course) => (
-                  <div
-                    key={course.course_id}
-                    draggable
-                    onDragStart={() => setDraggedCourseId(course.course_id)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => handleDrop(e, course.course_id)}
-                    className="glass rounded-xl p-3 border border-surface-700/50 hover:border-primary-500/50 transition-colors cursor-grab active:cursor-grabbing"
-                  >
+                {degreeCourses.map((course) => {
+                  const hasLinks = course.linked_courses?.length > 0;
+                  return (
+                    <div
+                      key={course.course_id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, course.course_id)}
+                      onDrag={(e) => handleDrag(e)}
+                      onDragEnd={clearDragState}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => handleDrop(e, course.course_id)}
+                      className={`
+                        relative bg-[var(--color-surface-container-lowest)] 
+                        shadow-[var(--shadow-soft)] rounded-xl p-3 
+                        transition-colors cursor-grab active:cursor-grabbing
+                        ${hasLinks 
+                          ? 'border-2 border-green-500/80 shadow-[0_0_12px_rgba(34,197,94,0.3)]' 
+                          : 'border border-[var(--color-surface-container-high)]/50 hover:border-[var(--color-primary)]/50'
+                        }
+                      `}
+                    >
+                      {/* Ripple Effect Background - ONLY on active link creation */}
+                      {newlyLinkedIds.includes(course.course_id) && (
+                        <div className="absolute inset-0 rounded-xl border-4 border-green-400 animate-[ping_1s_cubic-bezier(0,0,0.2,1)_1] pointer-events-none" />
+                      )}
+                      {/* Wire / Green Line indicator */}
+                      {hasLinks && (
+                        <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1/2 bg-green-500 rounded-l-md pointer-events-none" />
+                      )}
                     <div className="flex justify-between items-start mb-2">
-                      <div className="font-mono text-sm font-bold text-primary-400">
+                      <div className="font-mono text-sm font-bold text-[var(--color-primary)]">
                         {course.course_id}
                       </div>
                     </div>
-                    <div className="text-sm text-surface-200 font-medium line-clamp-2 mb-2">
+                    <div className="text-sm text-[var(--color-on-surface)] font-medium line-clamp-2 mb-2">
                       {course.aliases?.[0] || 'Unnamed Course'}
                     </div>
 
                     {/* Show existing links */}
                     {course.linked_courses?.length > 0 && (
-                      <div className="pt-2 mt-2 border-t border-surface-700/50 flex flex-wrap gap-1.5">
+                      <div className="pt-2 mt-2 border-t border-[var(--color-surface-container-high)]/50 flex flex-wrap gap-1.5">
                         {course.linked_courses.map(linkedId => (
                           <div 
                             key={linkedId}
-                            className="flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md bg-surface-700 text-xs text-surface-300"
+                            className="flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md bg-[var(--color-surface-container-high)] text-xs text-[var(--color-on-surface-variant)]"
                           >
-                            <Link2 className="w-3 h-3 text-surface-400" />
+                            <Link2 className="w-3 h-3 text-[var(--color-on-surface-variant)]" />
                             {linkedId}
                             <button
                               onClick={(e) => { e.stopPropagation(); handleUnlink(course.course_id, linkedId); }}
@@ -1135,7 +1206,7 @@ function CourseLinkerTab() {
                       </div>
                     )}
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           );

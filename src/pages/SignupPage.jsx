@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowRight, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react';
 import { validatePassword } from '../utils/helpers';
+import Button from '../components/ui/Button';
 
 /* tiny password strength indicator */
 function PasswordStrength({ password }) {
@@ -17,10 +18,10 @@ function PasswordStrength({ password }) {
       {checks.map((c) => (
         <div key={c.label} className="flex items-center gap-1.5">
           {c.met
-            ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            : <Circle className="w-3.5 h-3.5 text-gray-300 shrink-0" />
+            ? <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-primary)] shrink-0" />
+            : <Circle className="w-3.5 h-3.5 text-[var(--color-outline-variant)] shrink-0" />
           }
-          <span className={`text-xs ${c.met ? 'text-emerald-600' : 'text-gray-400'}`}>
+          <span className={`text-xs ${c.met ? 'text-[var(--color-primary)] font-medium' : 'text-[var(--color-outline)]'}`}>
             {c.label}
           </span>
         </div>
@@ -72,33 +73,32 @@ export default function SignupPage() {
   const passwordsMatch = confirmPassword && password === confirmPassword;
 
   return (
-    <div className="min-h-screen flex gradient-bg">
+    <div className="min-h-screen flex bg-[var(--color-surface)]">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 sm:px-16 py-10 overflow-y-auto relative">
+        {/* Decorative Background Blur */}
+        <div className="absolute top-1/4 -right-32 w-96 h-96 bg-[var(--color-tertiary-container)]/20 rounded-full blur-3xl mix-blend-multiply pointer-events-none" />
+        <div className="absolute bottom-1/4 -left-32 w-96 h-96 bg-[var(--color-primary-container)]/20 rounded-full blur-3xl mix-blend-multiply pointer-events-none" />
 
-      {/* ════════════════════════════════
-          CENTERED FORM
-          ════════════════════════════════ */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 sm:px-16 py-10 overflow-y-auto">
-
-        <div className="w-full max-w-md auth-card p-8 sm:p-10 animate-slide-in-right">
+        <div className="w-full max-w-md bg-[var(--color-surface-container-lowest)] shadow-[var(--shadow-elevated)] rounded-[var(--radius-3xl)] p-8 sm:p-10 animate-fade-in relative z-10 border border-[var(--color-surface-container)]">
 
           {/* Typography Logo */}
           <div className="flex justify-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-primary-600 shadow-md flex items-center justify-center">
+            <div className="w-12 h-12 rounded-[var(--radius-xl)] bg-[var(--color-primary)] shadow-md flex items-center justify-center">
               <span className="font-serif text-2xl font-bold text-white italic">F</span>
             </div>
           </div>
 
           {/* Heading */}
           <div className="mb-7 text-center">
-            <h2 className="text-3xl font-serif font-bold text-surface-100 tracking-tight">Create account</h2>
-            <p className="mt-2 text-surface-400 text-sm font-medium">
+            <h2 className="text-3xl font-bold text-[var(--color-on-surface)] tracking-tight">Create account</h2>
+            <p className="mt-2 text-[var(--color-on-surface-variant)] text-sm font-medium">
               Fill in your details to get started
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="mb-5 px-4 py-3 rounded-none text-sm font-semibold border-2 border-red-600 bg-red-50 text-red-600 animate-slide-down flex items-start gap-2">
+            <div className="mb-5 px-4 py-3 rounded-xl text-sm font-semibold border-2 border-[var(--color-error)] bg-[var(--color-error-container)] text-[var(--color-on-error-container)] animate-fade-in flex items-start gap-2">
               <span className="mt-0.5">⚠</span>
               <span>{error}</span>
             </div>
@@ -108,7 +108,7 @@ export default function SignupPage() {
 
             {/* Reg No */}
             <div className="space-y-1.5">
-              <label htmlFor="su-reg" className="block text-sm font-medium text-surface-200">
+              <label htmlFor="su-reg" className="block text-sm font-semibold text-[var(--color-on-surface)]">
                 Registration Number
               </label>
               <input
@@ -119,14 +119,13 @@ export default function SignupPage() {
                 value={regNo}
                 onChange={(e) => setRegNo(e.target.value)}
                 required
-                className="auth-input w-full px-4 py-3 text-sm font-medium"
+                className="w-full px-4 py-3 text-sm font-medium bg-[var(--color-surface-container)] border-none rounded-[var(--radius-lg)] text-[var(--color-on-surface)] focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-[var(--color-surface-container-lowest)] transition-colors placeholder:text-[var(--color-outline-variant)]"
               />
-
             </div>
 
             {/* Full Name */}
             <div className="space-y-1.5">
-              <label htmlFor="su-name" className="block text-sm font-medium text-surface-200">
+              <label htmlFor="su-name" className="block text-sm font-semibold text-[var(--color-on-surface)]">
                 Full Name
               </label>
               <input
@@ -137,13 +136,13 @@ export default function SignupPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="auth-input w-full px-4 py-3 text-sm font-medium"
+                className="w-full px-4 py-3 text-sm font-medium bg-[var(--color-surface-container)] border-none rounded-[var(--radius-lg)] text-[var(--color-on-surface)] focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-[var(--color-surface-container-lowest)] transition-colors placeholder:text-[var(--color-outline-variant)]"
               />
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="su-pw" className="block text-sm font-medium text-surface-200">
+              <label htmlFor="su-pw" className="block text-sm font-semibold text-[var(--color-on-surface)]">
                 Password
               </label>
               <div className="relative">
@@ -155,12 +154,12 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="auth-input w-full px-4 py-3 pr-12 text-sm font-medium"
+                  className="w-full px-4 py-3 pr-12 text-sm font-medium bg-[var(--color-surface-container)] border-none rounded-[var(--radius-lg)] text-[var(--color-on-surface)] focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-[var(--color-surface-container-lowest)] transition-colors placeholder:text-[var(--color-outline-variant)]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-100 transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--color-outline)] hover:text-[var(--color-on-surface)] transition-colors cursor-pointer"
                   tabIndex={-1}
                 >
                   {showPw ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
@@ -171,7 +170,7 @@ export default function SignupPage() {
 
             {/* Confirm Password */}
             <div className="space-y-1.5">
-              <label htmlFor="su-confirm" className="block text-sm font-medium text-surface-200">
+              <label htmlFor="su-confirm" className="block text-sm font-semibold text-[var(--color-on-surface)]">
                 Confirm Password
               </label>
               <div className="relative">
@@ -183,75 +182,56 @@ export default function SignupPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="auth-input w-full px-4 py-3 pr-12 text-sm font-medium"
+                  className="w-full px-4 py-3 pr-12 text-sm font-medium bg-[var(--color-surface-container)] border-none rounded-[var(--radius-lg)] text-[var(--color-on-surface)] transition-colors placeholder:text-[var(--color-outline-variant)]"
                   style={
                     confirmPassword
                       ? {
-                          borderColor: passwordsMatch ? '#10b981' : '#ef4444',
                           boxShadow: passwordsMatch
-                            ? '0 0 0 3px rgba(16, 185, 129, 0.15)'
-                            : '0 0 0 3px rgba(239, 68, 68, 0.15)',
+                            ? '0 0 0 2px var(--color-primary)'
+                            : '0 0 0 2px var(--color-error)',
+                          backgroundColor: 'var(--color-surface-container-lowest)',
                         }
-                      : undefined
+                      : {}
                   }
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-100 transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--color-outline)] hover:text-[var(--color-on-surface)] transition-colors cursor-pointer"
                   tabIndex={-1}
                 >
                   {showConfirm ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
                 </button>
               </div>
               {confirmPassword && !passwordsMatch && (
-                <p className="text-xs text-red-600 font-semibold animate-slide-down">Passwords don't match</p>
+                <p className="text-xs text-[var(--color-error)] font-semibold animate-fade-in">Passwords don't match</p>
               )}
               {passwordsMatch && (
-                <p className="text-xs text-emerald-600 font-semibold animate-slide-down flex items-center gap-1">
+                <p className="text-xs text-[var(--color-primary)] font-semibold animate-fade-in flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Passwords match
                 </p>
               )}
             </div>
 
             {/* Submit */}
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="
-                w-full flex items-center justify-center gap-2 mt-2
-                py-3.5 rounded-xl text-sm font-medium text-white
-                transition-all duration-200
-                bg-primary-600 border border-transparent
-                shadow-sm hover:bg-primary-700 active:bg-primary-800 hover:-translate-y-0.5
-                disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none
-                cursor-pointer
-              "
+              loading={loading}
+              className="w-full py-3.5 mt-2"
+              size="lg"
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  Creating account…
-                </>
-              ) : (
-                <>
-                  Create Account
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+              Create Account
+              {!loading && <ArrowRight className="w-4 h-4 ml-1" />}
+            </Button>
           </form>
 
           {/* Sign-in link */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-surface-700" />
+              <div className="w-full border-t border-[var(--color-surface-container-highest)]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-transparent text-xs text-surface-500 font-medium">
+              <span className="px-3 bg-[var(--color-surface-container-lowest)] text-xs text-[var(--color-outline)] font-medium">
                 Already have an account?
               </span>
             </div>
@@ -259,19 +239,12 @@ export default function SignupPage() {
 
           <Link
             to="/login"
-            className="
-              w-full flex items-center justify-center gap-2
-              py-3 rounded-xl text-sm font-medium bg-surface-900
-              border border-surface-700 text-surface-200
-              shadow-sm hover:bg-surface-800 active:bg-surface-700 hover:-translate-y-0.5
-              transition-all duration-200
-              cursor-pointer
-            "
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-[var(--radius-2xl)] text-sm font-medium bg-[var(--color-surface)] border border-[var(--color-surface-container)] text-[var(--color-on-surface)] shadow-[var(--shadow-soft)] hover:bg-[var(--color-surface-container-low)] active:scale-[0.98] transition-all duration-200 cursor-pointer"
           >
             Sign in instead
           </Link>
 
-          <p className="text-center text-xs text-surface-500 font-bold mt-6">
+          <p className="text-center text-xs text-[var(--color-outline)] font-bold mt-6">
             Only approved students on the whitelist can register.
           </p>
         </div>
