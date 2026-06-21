@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Calendar, BookOpen, Clock, Loader2, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Calendar, BookOpen, Clock, Loader2, CheckCircle2 } from 'lucide-react';
 import { getAllCourses } from '../../lib/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvents } from '../../contexts/EventsContext';
@@ -7,10 +7,9 @@ import { matchCourse } from '../../utils/courseMatcher';
 import { parseNaturalLanguageEvent } from '../../utils/nlpParser';
 import { normalizeText, matchKeywordGroup, KEYWORD_GROUPS } from '../../utils/chatMatcher';
 import { format } from 'date-fns';
-import Button from '../ui/Button';
 
 export default function QuickAddChat({ onSendMessage, initialInput = '' }) {
-  const { userProfile } = useAuth();
+  useAuth();
   const { addNewEvent } = useEvents();
   const [inputStr, setInputStr] = useState(initialInput);
   const [courses, setCourses] = useState([]);
@@ -31,7 +30,7 @@ export default function QuickAddChat({ onSendMessage, initialInput = '' }) {
   // Debounced parsing
   useEffect(() => {
     if (!inputStr.trim() || courses.length === 0) {
-      setParsedData(null);
+      Promise.resolve().then(() => setParsedData(null));
       return;
     }
 
@@ -158,11 +157,77 @@ export default function QuickAddChat({ onSendMessage, initialInput = '' }) {
     );
   };
 
+  const getRecommendedCourses = () => {
+    if (!inputStr.trim()) return courses.slice(0, 6);
+
+    const cleanInput = inputStr.trim().toLowerCase();
+    const tokens = cleanInput.split(/[\s-]+/);
+
+    const scored = courses.map(c => {
+      let score = 0;
+      const courseId = c.course_id.toLowerCase();
+      
+      if (courseId === cleanInput) {
+        score += 1000;
+      }
+      
+      const compactClean = cleanInput.replace(/\s+/g, '');
+      const compactId = courseId.replace(/\s+/g, '');
+      if (compactId.startsWith(compactClean)) {
+        score += 500;
+      } else if (compactId.includes(compactClean)) {
+        score += 300;
+      }
+
+      let tokenMatches = 0;
+      tokens.forEach(t => {
+        if (courseId.includes(t)) {
+          tokenMatches++;
+        }
+      });
+      if (tokenMatches === tokens.length) {
+        score += 400;
+      } else {
+        score += tokenMatches * 100;
+      }
+
+      const aliases = (c.aliases || []).map(a => a.toLowerCase());
+      aliases.forEach(alias => {
+        if (alias === cleanInput) {
+          score += 800;
+        } else if (alias.startsWith(cleanInput)) {
+          score += 400;
+        } else if (alias.includes(cleanInput)) {
+          score += 200;
+        }
+
+        let aliasTokenMatches = 0;
+        tokens.forEach(t => {
+          if (alias.includes(t)) {
+            aliasTokenMatches++;
+          }
+        });
+        if (aliasTokenMatches === tokens.length) {
+          score += 300;
+        } else {
+          score += aliasTokenMatches * 50;
+        }
+      });
+
+      return { course: c, score };
+    });
+
+    const filtered = scored.filter(item => item.score > 0).sort((a, b) => b.score - a.score).map(item => item.course);
+    return filtered.length > 0 ? filtered.slice(0, 6) : courses.slice(0, 6);
+  };
+
+  const displayRecommendations = getRecommendedCourses();
+
   const isQuery = checkIsQuery(inputStr);
   const canSubmit = inputStr.trim().length > 0 && (isQuery || (parsedData && parsedData.courseMatch && parsedData.date));
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-8 mb-4 animate-slide-up relative">
+    <div className="w-full max-w-5xl mx-auto mt-8 mb-4 animate-slide-up relative">
       {/* Absolute Success Overlay */}
       {showSuccess && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--color-surface)]/80 backdrop-blur-sm rounded-[var(--radius-xl)] animate-fade-in border border-[var(--color-border)]">
@@ -182,7 +247,7 @@ export default function QuickAddChat({ onSendMessage, initialInput = '' }) {
               <div className="animate-fade-in space-y-2.5">
                 <p className="text-xs font-semibold text-[#0f62fe]">Which course is this for?</p>
                 <div className="flex flex-wrap gap-2">
-                  {courses.slice(0, 6).map(c => (
+                  {displayRecommendations.map(c => (
                     <button 
                       key={c.course_id}
                       onClick={() => handleAppend(c.course_id)}

@@ -9,9 +9,6 @@ import EventDetailModal from '../components/calendar/EventDetailModal';
 import AddEventModal from '../components/events/AddEventModal';
 import { CALENDAR_VIEWS, DEGREES } from '../utils/constants';
 import Select from '../components/ui/Select';
-import SlideOver from '../components/ui/SlideOver';
-import Button from '../components/ui/Button';
-import { getDegreeColor, getEventTypeColor, capitalize } from '../utils/helpers';
 import DayViewDrawer from '../components/calendar/DayViewDrawer';
 import {
   startOfWeek,
@@ -23,18 +20,16 @@ import {
   addMonths,
   subMonths,
   isWithinInterval,
-  format,
 } from 'date-fns';
-import { Loader2, CalendarDays, Plus, ChevronRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { currentUser } = useAuth();
-  const { events, courses, courseMap, loading, publicDegree, setPublicDegree } = useEvents();
+  const { events, courseMap, loading, publicDegree, setPublicDegree } = useEvents();
 
   const [view, setView] = useState(CALENDAR_VIEWS.MONTH);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [dayDetails, setDayDetails] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addModalDate, setAddModalDate] = useState(null);
   
@@ -69,27 +64,11 @@ export default function DashboardPage() {
     });
   }, [events, currentDate, view]);
 
-  const upcomingEvents = useMemo(() => {
-    const now = new Date();
-    return events
-      .filter((e) => {
-        const d = e.date?.toDate ? e.date.toDate() : new Date(e.date);
-        return d >= now;
-      })
-      .sort((a, b) => {
-        const dA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
-        const dB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
-        return dA - dB;
-      })
-      .slice(0, 5);
-  }, [events]);
-
   function openAddForDay(day) {
     if (!currentUser) {
       navigate('/login');
       return;
     }
-    setDayDetails(null);
     setAddModalDate(day);
     setAddModalOpen(true);
   }
@@ -199,46 +178,6 @@ export default function DashboardPage() {
         }}
         onAddEvent={handleAddFromDrawer}
       />
-    </div>
-  );
-}
-
-function EventCard({ event, courseMap, onClick }) {
-  const course = courseMap[event.course_id];
-  const colors = getDegreeColor(course?.degrees?.[0] || 'Default');
-  const eventDate = event.date?.toDate ? event.date.toDate() : new Date(event.date);
-
-  return (
-    <div 
-      onClick={onClick}
-      className="bg-[var(--color-surface)] rounded-2xl p-4 border border-[var(--color-surface-container)] hover:shadow-[var(--shadow-soft)] transition-shadow group cursor-pointer relative overflow-hidden flex flex-col gap-3"
-    >
-      <div 
-        className="absolute left-0 top-0 w-1.5 h-full rounded-l-2xl"
-        style={{ backgroundColor: colors.border }}
-      />
-      <div className="flex justify-between items-start ml-2">
-        <h4 className="font-semibold text-[var(--color-on-surface)] group-hover:opacity-80 transition-opacity">
-          {event.title}
-        </h4>
-        <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-outline)] bg-[var(--color-surface-container)] px-2 py-0.5 rounded">
-          {capitalize(event.type)}
-        </span>
-      </div>
-      <div className="flex items-center gap-2 text-[var(--color-on-surface-variant)] text-sm ml-2">
-        <CalendarDays className="w-4 h-4" />
-        {format(eventDate, 'MMM d, h:mm a')}
-      </div>
-      {course && (
-        <div className="flex items-center gap-3 ml-2 mt-auto">
-          <div className="flex -space-x-2">
-            <div className="w-6 h-6 rounded-full bg-[var(--color-primary-container)] border-2 border-[var(--color-surface)] flex items-center justify-center text-[10px] font-bold text-[var(--color-on-primary-container)]">
-              {course.course_id.slice(0, 2)}
-            </div>
-          </div>
-          <span className="text-xs font-medium text-[var(--color-outline)]">{course.aliases?.[0] || course.course_id}</span>
-        </div>
-      )}
     </div>
   );
 }

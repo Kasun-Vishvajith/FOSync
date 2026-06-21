@@ -18,11 +18,7 @@ export default function ProtectedRoute({ children, requiredRole }) {
   }
 
   if (!userProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center gradient-bg">
-        <Loader2 className="w-8 h-8 text-primary-400 animate-spin" />
-      </div>
-    );
+    return <Navigate to="/login" replace />;
   }
 
   // Role-based access

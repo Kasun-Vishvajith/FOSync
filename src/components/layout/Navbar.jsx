@@ -12,7 +12,7 @@ import { useState } from 'react';
 import AddEventModal from '../events/AddEventModal';
 
 export default function Navbar() {
-  const { currentUser, userProfile, logout, isAdmin } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [addModalOpen, setAddModalOpen] = useState(false);

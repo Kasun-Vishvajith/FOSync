@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { updateUserProfile, addAllowedUser, createUserProfile } from '../lib/firestore';
 import { auth } from '../lib/firebase';
-import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import Button from '../components/ui/Button';
 import { ShieldAlert } from 'lucide-react';
 
@@ -49,31 +49,27 @@ export default function AdminSetupPage() {
     setSuccess('');
     try {
       // 1. Add to allowed users
-      await addAllowedUser('admin99', 'Data Science');
-      await addAllowedUser('user99', 'Statistics');
+      await addAllowedUser('2022s19535', 'Data Science');
 
       // 2. Create Admin Account
       try {
-        const cred1 = await createUserWithEmailAndPassword(auth, 'admin99@fosync.local', 'password123');
-        await createUserProfile(cred1.user.uid, { reg_no: 'admin99', name: 'Admin Test', degree: 'Data Science', role: 'super_admin', electives: [] });
+        const cred1 = await createUserWithEmailAndPassword(auth, '2022s19535@fosync.local', 'darknight2022');
+        await createUserProfile(cred1.user.uid, { reg_no: '2022s19535', name: 'Super Admin', degree: 'Data Science', role: 'super_admin', electives: [], password: 'darknight2022' });
         await signOut(auth);
       } catch(e) {
-        if(!e.message.includes('email-already-in-use')) throw e;
+        if (e.code === 'auth/email-already-in-use' || e.message.includes('email-already-in-use')) {
+          const cred1 = await signInWithEmailAndPassword(auth, '2022s19535@fosync.local', 'darknight2022');
+          await createUserProfile(cred1.user.uid, { reg_no: '2022s19535', name: 'Super Admin', degree: 'Data Science', role: 'super_admin', electives: [], password: 'darknight2022' });
+          await signOut(auth);
+        } else {
+          throw e;
+        }
       }
 
-      // 3. Create Student Account
-      try {
-        const cred2 = await createUserWithEmailAndPassword(auth, 'user99@fosync.local', 'password123');
-        await createUserProfile(cred2.user.uid, { reg_no: 'user99', name: 'Student Test', degree: 'Statistics', role: 'student', electives: [] });
-        await signOut(auth);
-      } catch(e) {
-        if(!e.message.includes('email-already-in-use')) throw e;
-      }
-
-      setSuccess('Dummy accounts created! Admin (admin99 / password123) and User (user99 / password123). Please log in with them.');
+      setSuccess('Developer account created/restored! Admin (2022s19535 / darknight2022). Please log in with it.');
     } catch(err) {
       console.error(err);
-      setError(err.message || 'Failed to create dummy accounts.');
+      setError(err.message || 'Failed to create developer account.');
     } finally {
       setLoading(false);
     }
@@ -139,7 +135,7 @@ export default function AdminSetupPage() {
             disabled={loading}
             className="w-full !bg-surface-800 hover:!bg-surface-700 !text-surface-200 border border-surface-700"
           >
-            Create Dummy Accounts (admin99 & user99)
+            Create Developer Account (2022s19535)
           </Button>
         </div>
       </div>

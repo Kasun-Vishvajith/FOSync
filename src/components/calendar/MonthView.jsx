@@ -8,9 +8,9 @@ import {
   isSameMonth,
   isToday,
 } from 'date-fns';
-import { getDegreeColor, getEventTypeColor } from '../../utils/helpers';
+import { getEventTypeColor } from '../../utils/helpers';
 
-export default function MonthView({ currentDate, events, courseMap, onEventClick, onDayClick }) {
+export default function MonthView({ currentDate, events, onDayClick }) {
   // Build calendar grid (weeks x 7 days)
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -69,22 +69,27 @@ export default function MonthView({ currentDate, events, courseMap, onEventClick
                 className={`
                   rounded-[var(--radius-xl)] flex flex-col p-1 sm:p-2 border transition-all duration-200 overflow-hidden min-h-0
                   ${isCurrentMonth ? 'bg-[var(--color-surface-container-lowest)]' : 'bg-[var(--color-surface-container-low)]/50'}
-                  ${today ? 'bg-[var(--color-primary-container)] border-[var(--color-primary)] text-[var(--color-on-primary-container)] shadow-md' : 'border-[var(--color-surface-container)]'}
+                  ${today ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/20 shadow-md' : 'border-[var(--color-surface-container)]'}
                   hover:border-[var(--color-outline)] cursor-pointer
                 `}
                 onClick={() => onDayClick && onDayClick(day, dayEvents)}
               >
                 {/* Day Number */}
-                <div className="flex justify-center items-center h-5 min-h-[20px] mb-1 shrink-0">
-                  <span className={`text-sm font-medium leading-none ${today ? 'text-[var(--color-on-primary-container)]' : dayTextColor}`}>
-                    {format(day, 'd')}
-                  </span>
+                <div className="flex justify-center items-center h-6 min-h-[24px] mb-1 shrink-0">
+                  {today ? (
+                    <span className="w-6 h-6 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-xs font-bold shadow-md">
+                      {format(day, 'd')}
+                    </span>
+                  ) : (
+                    <span className={`text-xs sm:text-sm font-medium leading-none ${dayTextColor}`}>
+                      {format(day, 'd')}
+                    </span>
+                  )}
                 </div>
 
                 {/* Events */}
                 <div className="flex-1 overflow-hidden flex flex-col gap-1 pr-0.5">
                   {dayEvents.slice(0, 2).map((event) => {
-                    const course = courseMap[event.course_id];
                     const colors = getEventTypeColor(event.type);
                     
                     return (

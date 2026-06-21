@@ -1,6 +1,6 @@
 import Modal from '../ui/Modal';
 import { formatDate, formatTime, getEventTypeClass, capitalize } from '../../utils/helpers';
-import { Clock, BookOpen, Tag } from 'lucide-react';
+import { Clock, BookOpen, Tag, FileText } from 'lucide-react';
 
 export default function EventDetailModal({ event, courseMap, onClose }) {
   if (!event) return null;
@@ -24,7 +24,20 @@ export default function EventDetailModal({ event, courseMap, onClose }) {
             <Clock className="w-4 h-4 text-surface-400 shrink-0" />
             <div>
               <p className="text-surface-200">{formatDate(event.date)}</p>
-              <p className="text-surface-400">{formatTime(event.date)}</p>
+              <p className="text-surface-400">
+                {formatTime(event.date)}
+                {event.end_date && (
+                  <>
+                    {' - '}
+                    {formatTime(event.end_date)}
+                    {formatDate(event.date) !== formatDate(event.end_date) && (
+                      <span className="text-xs text-surface-500 ml-1">
+                        ({formatDate(event.end_date)})
+                      </span>
+                    )}
+                  </>
+                )}
+              </p>
             </div>
           </div>
 
@@ -53,6 +66,17 @@ export default function EventDetailModal({ event, courseMap, onClose }) {
                     </span>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+          {event.note && (
+            <div className="flex items-start gap-3 text-sm border-t border-surface-700/50 pt-3 mt-3">
+              <FileText className="w-4 h-4 text-surface-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-surface-400 text-xs font-semibold uppercase tracking-wider mb-1">Note</p>
+                <p className="text-surface-200 bg-surface-800/40 p-2.5 rounded-lg border border-surface-700/30 whitespace-pre-wrap text-xs leading-relaxed break-words">
+                  {event.note}
+                </p>
               </div>
             </div>
           )}

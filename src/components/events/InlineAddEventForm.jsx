@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BookOpen, Clock, Calendar, CheckCircle2, Loader2, Plus, Sparkles } from 'lucide-react';
 import { useEvents } from '../../contexts/EventsContext';
-import { capitalize, parseCustomTime } from '../../utils/helpers';
+import { capitalize, parseCustomTime, parseDurationOrEndTime } from '../../utils/helpers';
 import { format } from 'date-fns';
 
 const TIME_PRESETS = [
@@ -55,13 +55,14 @@ export default function InlineAddEventForm({ initialData = {}, onSuccess, onCanc
     time: initialTimeStr,
     date: initialDateStr,
     customTitle: initialData.title && initialData.title !== 'New Event' ? initialData.title : '',
+    durationOrEnd: '',
+    note: '',
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  const selectedType = TYPE_OPTIONS.find((t) => t.value === form.type) || TYPE_OPTIONS[0];
   const autoTitle = form.course_id
     ? `${form.course_id} ${capitalize(form.type)}`
     : '';
@@ -80,6 +81,20 @@ export default function InlineAddEventForm({ initialData = {}, onSuccess, onCanc
       return;
     }
 
+    let endDateObj = null;
+    if (form.type !== 'deadline' && form.durationOrEnd.trim()) {
+      const parsedEnd = parseDurationOrEndTime(form.durationOrEnd, parsedTime.hours, parsedTime.minutes);
+      if (!parsedEnd) {
+        setError('Please enter a valid duration or end time (e.g. 1.5h, 90m, 11:30 AM).');
+        return;
+      }
+      endDateObj = new Date(form.date + 'T00:00:00');
+      endDateObj.setHours(parsedEnd.hours, parsedEnd.minutes, 0, 0);
+      if (endDateObj.getTime() < (new Date(form.date + 'T00:00:00').setHours(parsedTime.hours, parsedTime.minutes))) {
+        endDateObj.setDate(endDateObj.getDate() + 1);
+      }
+    }
+
     setError('');
     setSubmitting(true);
     try {
@@ -90,7 +105,9 @@ export default function InlineAddEventForm({ initialData = {}, onSuccess, onCanc
         course_id: form.course_id,
         title: displayTitle || `${form.course_id} ${capitalize(form.type)}`,
         date: dateObj,
+        end_date: endDateObj,
         type: form.type,
+        note: form.note,
       };
 
       await addNewEvent(newEventObj);
@@ -122,7 +139,7 @@ export default function InlineAddEventForm({ initialData = {}, onSuccess, onCanc
   }
 
   return (
-    <div className="w-full bg-[var(--color-bg-base)]/50 backdrop-blur-md rounded-xl border border-[var(--color-border)] p-4 space-y-4 my-2 max-w-lg transition-all">
+    <div className="w-full bg-[var(--color-bg-base)]/50 backdrop-blur-md rounded-xl border border-[var(--color-border)] p-4 space-y-4 my-2 max-w-4xl transition-all">
       <div className="flex items-center gap-1.5 border-b border-[var(--color-border)] pb-2 mb-1">
         <Sparkles className="w-4 h-4 text-[var(--color-accent)] animate-pulse" />
         <h4 className="text-xs font-bold text-[var(--color-text-primary)] tracking-wide uppercase">
@@ -139,7 +156,7 @@ export default function InlineAddEventForm({ initialData = {}, onSuccess, onCanc
               <button
                 key={t.value}
                 type="button"
-                onClick={() => setForm((f) => ({ ...f, type: t.value }))}
+                onClick={() => setForm((f) => ({ ...f, type: t.value, durationOrEnd: t.value === 'deadline' ? '' : f.durationOrEnd }))}
                 className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
                   form.type === t.value
                     ? `${t.color} border-current ring-1 ring-current/10`
@@ -226,6 +243,38 @@ export default function InlineAddEventForm({ initialData = {}, onSuccess, onCanc
           </div>
         </div>
 
+        {/* Duration or End Time (optional) */}
+        {form.type !== 'deadline' && (
+          <div className="space-y-1 animate-fade-in">
+            <label className="flex items-center gap-1 text-[11px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
+              <Clock className="w-3 h-3 text-[var(--color-accent)]" />
+              Duration / End Time <span className="text-[9px] font-normal lowercase">(optional)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. 1.5h, 90m, or 11:30 AM"
+              value={form.durationOrEnd}
+              onChange={(e) => setForm((f) => ({ ...f, durationOrEnd: e.target.value }))}
+              className="w-full px-2.5 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs focus:outline-none focus:border-[var(--color-accent)]"
+            />
+            {form.durationOrEnd.trim() && parsedTimeResult && (
+              <div className="text-[10px] mt-0.5">
+                {(() => {
+                  const parsed = parseDurationOrEndTime(form.durationOrEnd, parsedTimeResult.hours, parsedTimeResult.minutes);
+                  if (parsed) {
+                    return (
+                      <span className="text-[#16a34a] font-medium">
+                        ✓ Ends at: {parsed.formatted12} {parsed.isDuration ? `(${parsed.durationMinutes}m)` : ''}
+                      </span>
+                    );
+                  }
+                  return <span className="text-[#da1e28] font-medium">✗ Invalid duration or end time format</span>;
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Time Presets */}
         <div className="flex flex-wrap gap-1 pt-0.5">
           {TIME_PRESETS.map((p) => (
@@ -242,6 +291,20 @@ export default function InlineAddEventForm({ initialData = {}, onSuccess, onCanc
               {p.label}
             </button>
           ))}
+        </div>
+
+        {/* Note (optional) */}
+        <div className="space-y-1">
+          <label className="text-[11px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
+            Note <span className="text-[9px] font-normal lowercase">(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={form.note}
+            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+            placeholder="e.g. Bring calculators, room 204"
+            className="w-full px-2.5 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs placeholder-[var(--color-text-secondary)]/60 focus:outline-none focus:border-[var(--color-accent)]"
+          />
         </div>
 
         {error && (

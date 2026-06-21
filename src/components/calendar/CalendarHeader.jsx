@@ -1,9 +1,6 @@
 import { format } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { CALENDAR_VIEWS } from '../../utils/constants';
-import { useAuth } from '../../contexts/AuthContext';
-import AddEventModal from '../events/AddEventModal';
-import { useState } from 'react';
 
 export default function CalendarHeader({
   currentDate,
@@ -14,8 +11,6 @@ export default function CalendarHeader({
   onToday,
   onSetDate,
 }) {
-  const { currentUser } = useAuth();
-  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = format(currentDate, 'MMMM');
@@ -102,10 +97,6 @@ export default function CalendarHeader({
         </div>
       </div>
 
-      <AddEventModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-      />
     </>
   );
 }

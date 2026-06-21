@@ -13,7 +13,7 @@ export function matchCourse(inputStr, availableCourses) {
     const courseId = course.course_id.toLowerCase();
     
     // Create a flexible regex that allows optional spaces or dashes between all characters
-    const chars = courseId.replace(/[\s\-]/g, '').split('');
+    const chars = courseId.replace(/[\s-]/g, '').split('');
     if (chars.length > 0) {
       const regexParts = chars.map((char, index) => {
         const escaped = char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

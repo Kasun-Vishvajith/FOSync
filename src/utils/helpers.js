@@ -86,10 +86,13 @@ export function getEventTypeColor(type) {
 }
 
 
-// Capitalize first letter
+// Capitalize words and format underscores/spaces
 export function capitalize(str) {
   if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
+  return str
+    .split(/[\s_]+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 // Truncate text
@@ -134,4 +137,53 @@ export function parseCustomTime(timeStr) {
   
   return null;
 }
+
+// Parse duration or ending time input
+export function parseDurationOrEndTime(input, startHours, startMinutes) {
+  if (!input) return null;
+  const clean = input.trim().toLowerCase();
+
+  // Try duration regex (e.g., 2h, 1.5h, 90m, 90 mins, etc.)
+  const durationRegex = /^(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours|m|min|mins|minute|minutes)$/i;
+  const durMatch = clean.match(durationRegex);
+  if (durMatch) {
+    const value = parseFloat(durMatch[1]);
+    const unit = durMatch[2];
+    let additionalMinutes;
+    if (unit.startsWith('h')) {
+      additionalMinutes = Math.round(value * 60);
+    } else {
+      additionalMinutes = Math.round(value);
+    }
+
+    const totalMin = startMinutes + additionalMinutes;
+    const endHours = (startHours + Math.floor(totalMin / 60)) % 24;
+    const endMinutes = totalMin % 60;
+    
+    const pad = (n) => String(n).padStart(2, '0');
+    const displayTime = `${endHours === 0 || endHours === 12 ? 12 : endHours % 12}:${pad(endMinutes)} ${endHours >= 12 ? 'PM' : 'AM'}`;
+
+    return {
+      hours: endHours,
+      minutes: endMinutes,
+      formatted12: displayTime,
+      isDuration: true,
+      durationMinutes: additionalMinutes
+    };
+  }
+
+  // Otherwise, try custom time
+  const parsedTime = parseCustomTime(input);
+  if (parsedTime) {
+    return {
+      hours: parsedTime.hours,
+      minutes: parsedTime.minutes,
+      formatted12: parsedTime.formatted12,
+      isDuration: false
+    };
+  }
+
+  return null;
+}
+
 

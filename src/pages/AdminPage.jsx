@@ -5,6 +5,8 @@ import {
   getAllCourses, addCourse, updateCourse, deleteCourse, bulkAddCourses, linkCourses, unlinkCourses,
   getAllUsers, updateUserProfile, deleteUser as deleteUserDoc,
   getAllAllowedUsers, addAllowedUser, removeAllowedUser, bulkAddAllowedUsers,
+  resetDatabase, seedDefaultData, exportDatabase, importDatabase,
+  getActivityLogs, getSemesterSettings, updateSemesterSettings, progressStudentsToNextSemester,
 } from '../lib/firestore';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -15,23 +17,45 @@ import { capitalize, formatDate } from '../utils/helpers';
 import {
   Shield, CalendarPlus, BookOpen, Users, UserCheck,
   Plus, Trash2, Edit3, Upload, Search, X, Link as LinkIcon, Link2,
+  ShieldAlert, Download, History, Eye, EyeOff,
 } from 'lucide-react';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 // =============================================
 // MAIN ADMIN PAGE
 // =============================================
 export default function AdminPage() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('events');
+
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    confirmText: 'Delete',
+    isDanger: true,
+  });
+
+  const showConfirm = (title, message, onConfirm, confirmText = 'Delete', isDanger = true) => {
+    setConfirmConfig({ isOpen: true, title, message, onConfirm, confirmText, isDanger });
+  };
 
   const tabs = [
     { id: 'events', label: 'Events', icon: CalendarPlus },
     { id: 'courses', label: 'Courses', icon: BookOpen },
     { id: 'links', label: 'Link Courses', icon: LinkIcon },
-    ...(isSuperAdmin
+    ...(isAdmin
       ? [
           { id: 'users', label: 'Users', icon: Users },
+          { id: 'semester', label: 'Semester Settings', icon: Shield },
+        ]
+      : []),
+    ...(isSuperAdmin
+      ? [
           { id: 'allowed', label: 'Allowed Users', icon: UserCheck },
+          { id: 'logs', label: 'Activity Log', icon: History },
+          { id: 'system', label: 'System Settings', icon: ShieldAlert },
         ]
       : []),
   ];
@@ -75,12 +99,25 @@ export default function AdminPage() {
 
       {/* Tab Content */}
       <div className="animate-fade-in">
-        {activeTab === 'events' && <EventsTab />}
-        {activeTab === 'courses' && <CoursesTab />}
-        {activeTab === 'links' && <CourseLinkerTab />}
-        {activeTab === 'users' && isSuperAdmin && <UsersTab />}
-        {activeTab === 'allowed' && isSuperAdmin && <AllowedUsersTab />}
+        {activeTab === 'events' && <EventsTab showConfirm={showConfirm} />}
+        {activeTab === 'courses' && <CoursesTab showConfirm={showConfirm} />}
+        {activeTab === 'links' && <CourseLinkerTab showConfirm={showConfirm} />}
+        {activeTab === 'users' && isAdmin && <UsersTab showConfirm={showConfirm} />}
+        {activeTab === 'semester' && isAdmin && <SemesterTab showConfirm={showConfirm} />}
+        {activeTab === 'allowed' && isSuperAdmin && <AllowedUsersTab showConfirm={showConfirm} />}
+        {activeTab === 'logs' && isSuperAdmin && <ActivityLogTab />}
+        {activeTab === 'system' && isSuperAdmin && <SystemTab />}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        isDanger={confirmConfig.isDanger}
+      />
     </div>
   );
 }
@@ -88,7 +125,7 @@ export default function AdminPage() {
 // =============================================
 // EVENTS TAB
 // =============================================
-function EventsTab() {
+function EventsTab({ showConfirm }) {
   const { currentUser } = useAuth();
   const [events, setEvents] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -119,18 +156,21 @@ function EventsTab() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ course_id: '', title: '', date: '', type: 'lecture' });
+    setForm({ course_id: '', title: '', date: '', end_date: '', type: 'lecture', note: '' });
     setShowModal(true);
   }
 
   function openEdit(event) {
     setEditing(event);
     const d = event.date?.toDate ? event.date.toDate() : new Date(event.date);
+    const ed = event.end_date ? (event.end_date.toDate ? event.end_date.toDate() : new Date(event.end_date)) : null;
     setForm({
       course_id: event.course_id,
       title: event.title,
       date: d.toISOString().slice(0, 16),
+      end_date: ed ? ed.toISOString().slice(0, 16) : '',
       type: event.type,
+      note: event.note || '',
     });
     setShowModal(true);
   }
@@ -140,7 +180,9 @@ function EventsTab() {
       course_id: form.course_id,
       title: form.title,
       date: new Date(form.date),
+      end_date: form.type === 'deadline' ? null : (form.end_date ? new Date(form.end_date) : null),
       type: form.type,
+      note: form.note || '',
       created_by: currentUser?.uid || '',
     };
 
@@ -158,13 +200,18 @@ function EventsTab() {
   }
 
   async function handleDelete(eventId) {
-    if (!confirm('Delete this event?')) return;
-    try {
-      await deleteEvent(eventId);
-      await loadData();
-    } catch (err) {
-      console.error(err);
-    }
+    showConfirm(
+      'Delete Event',
+      'Are you sure you want to permanently delete this event?',
+      async () => {
+        try {
+          await deleteEvent(eventId);
+          await loadData();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    );
   }
 
   const filtered = events.filter(
@@ -277,12 +324,28 @@ function EventsTab() {
             value={form.date}
             onChange={(e) => setForm({ ...form, date: e.target.value })}
           />
+           {form.type !== 'deadline' && (
+             <Input
+               id="event-end-date"
+               label="End Date & Time (Optional)"
+               type="datetime-local"
+               value={form.end_date || ''}
+               onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+             />
+           )}
           <Select
             id="event-type"
             label="Event Type"
             value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value })}
+            onChange={(e) => setForm({ ...form, type: e.target.value, end_date: e.target.value === 'deadline' ? '' : form.end_date })}
             options={EVENT_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+          />
+          <Input
+            id="event-note"
+            label="Note (Optional)"
+            placeholder="e.g., Bring calculators, room 204"
+            value={form.note || ''}
+            onChange={(e) => setForm({ ...form, note: e.target.value })}
           />
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" onClick={() => setShowModal(false)}>
@@ -304,13 +367,18 @@ function EventsTab() {
 // =============================================
 // COURSES TAB
 // =============================================
-function CoursesTab() {
+function CoursesTab({ showConfirm }) {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showCsvModal, setShowCsvModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [courseCsvData, setCourseCsvData] = useState('');
+
+  // Filters
+  const [filterType, setFilterType] = useState('all');
+  const [filterYear, setFilterYear] = useState('all');
+  const [filterDegree, setFilterDegree] = useState('all');
 
   // Form
   const [form, setForm] = useState({
@@ -383,13 +451,39 @@ function CoursesTab() {
   }
 
   async function handleDelete(courseId) {
-    if (!confirm('Delete this course? Events linked to it will remain.')) return;
-    try {
-      await deleteCourse(courseId);
-      await loadCourses();
-    } catch (err) {
-      console.error(err);
-    }
+    showConfirm(
+      'Delete Course',
+      'Are you sure you want to delete this course? Events linked to it will remain but may lose their metadata.',
+      async () => {
+        try {
+          await deleteCourse(courseId);
+          await loadCourses();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    );
+  }
+
+  async function handleDeleteAll() {
+    showConfirm(
+      'Delete All Courses',
+      'WARNING: Are you sure you want to delete ALL courses? This action cannot be undone and will permanently delete all courses from the database.',
+      async () => {
+        try {
+          setLoading(true);
+          const promises = courses.map((c) => deleteCourse(c.course_id));
+          await Promise.all(promises);
+          await loadCourses();
+        } catch (err) {
+          console.error('Failed to delete all courses:', err);
+        } finally {
+          setLoading(false);
+        }
+      },
+      'Delete All',
+      true
+    );
   }
 
   async function handleCSVUpload() {
@@ -400,36 +494,35 @@ function CoursesTab() {
       const entries = [];
       // Skip header, parse rows
       for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line.trim()) continue;
-        
-        // Simple CSV split (not handling quoted commas perfectly, but sufficient for simple data)
-        const parts = line.split(',').map((s) => s.trim());
-        if (parts.length < 9) continue; // Need at least up to credits
+         const line = lines[i];
+         if (!line.trim()) continue;
+         
+         const parts = line.split(',').map((s) => s.trim());
+         if (parts.length < 9) continue;
 
-        const [
-          code, name, isDs, isStat, isAppliedStat, isIndStat, isElectiveStr, semesterStr, creditsStr, yearStr
-        ] = parts;
+         const [
+           code, name, isDs, isStat, isAppliedStat, isIndStat, isElectiveStr, semesterStr, creditsStr, yearStr
+         ] = parts;
 
-        if (!code) continue;
+         if (!code) continue;
 
-        const degrees = [];
-        const isTrue = (val) => val === '1' || val.toLowerCase() === 'true';
+         const degrees = [];
+         const isTrue = (val) => val === '1' || val.toLowerCase() === 'true';
 
-        if (isDs && isTrue(isDs)) degrees.push('Data Science');
-        if (isStat && isTrue(isStat)) degrees.push('Statistics');
-        if (isAppliedStat && isTrue(isAppliedStat)) degrees.push('Applied Statistics');
-        if (isIndStat && isTrue(isIndStat)) degrees.push('Industrial Statistics');
+         if (isDs && isTrue(isDs)) degrees.push('Data Science');
+         if (isStat && isTrue(isStat)) degrees.push('Statistics');
+         if (isAppliedStat && isTrue(isAppliedStat)) degrees.push('Applied Statistics');
+         if (isIndStat && isTrue(isIndStat)) degrees.push('Industrial Statistics');
 
-        entries.push({
-          course_id: code.toUpperCase(),
-          aliases: name ? [name] : [],
-          degrees,
-          is_elective: isElectiveStr && isTrue(isElectiveStr),
-          semester: semesterStr || '',
-          credits: creditsStr ? Number(creditsStr) : 0,
-          year: yearStr || '',
-        });
+         entries.push({
+           course_id: code.toUpperCase(),
+           aliases: name ? [name] : [],
+           degrees,
+           is_elective: isElectiveStr && isTrue(isElectiveStr),
+           semester: semesterStr || '',
+           credits: creditsStr ? Number(creditsStr) : 0,
+           year: yearStr || '',
+         });
       }
 
       if (entries.length > 0) {
@@ -452,17 +545,74 @@ function CoursesTab() {
     }));
   }
 
+  const filteredCourses = courses.filter((c) => {
+    if (filterType === 'core' && c.is_elective) return false;
+    if (filterType === 'elective' && !c.is_elective) return false;
+    if (filterYear !== 'all' && c.year !== filterYear) return false;
+    if (filterDegree !== 'all' && (!c.degrees || !c.degrees.includes(filterDegree))) return false;
+    return true;
+  });
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={() => setShowCsvModal(true)}>
-          <Upload className="w-4 h-4" />
-          CSV Upload
-        </Button>
-        <Button onClick={openCreate}>
-          <Plus className="w-4 h-4" />
-          Add Course
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--color-surface-container-low)] p-3 rounded-2xl border border-[var(--color-surface-container)]">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-[var(--color-on-surface-variant)]">Type:</span>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-medium bg-[var(--color-surface-container-lowest)] rounded-lg text-[var(--color-on-surface)] border border-[var(--color-surface-container)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none cursor-pointer"
+            >
+              <option value="all">All Types</option>
+              <option value="core">Core</option>
+              <option value="elective">Elective</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-[var(--color-on-surface-variant)]">Year:</span>
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-medium bg-[var(--color-surface-container-lowest)] rounded-lg text-[var(--color-on-surface)] border border-[var(--color-surface-container)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none cursor-pointer"
+            >
+              <option value="all">All Years</option>
+              <option value="3">Year 3</option>
+              <option value="4">Year 4</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-[var(--color-on-surface-variant)]">Degree:</span>
+            <select
+              value={filterDegree}
+              onChange={(e) => setFilterDegree(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-medium bg-[var(--color-surface-container-lowest)] rounded-lg text-[var(--color-on-surface)] border border-[var(--color-surface-container)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none cursor-pointer"
+            >
+              <option value="all">All Degrees</option>
+              <option value="Data Science">Data Science</option>
+              <option value="Statistics">Statistics</option>
+              <option value="Applied Statistics">Applied Statistics</option>
+              <option value="Industrial Statistics">Industrial Statistics</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="danger" size="sm" onClick={handleDeleteAll} disabled={courses.length === 0}>
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete All
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setShowCsvModal(true)}>
+            <Upload className="w-3.5 h-3.5" />
+            CSV Upload
+          </Button>
+          <Button size="sm" onClick={openCreate}>
+            <Plus className="w-3.5 h-3.5" />
+            Add Course
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -471,14 +621,14 @@ function CoursesTab() {
             <div key={i} className="h-20 rounded-xl bg-[var(--color-surface-container)]/50 animate-pulse" />
           ))}
         </div>
-      ) : courses.length === 0 ? (
-        <div className="text-center py-12 text-[var(--color-outline)]">
+      ) : filteredCourses.length === 0 ? (
+        <div className="text-center py-12 text-[var(--color-outline)] animate-fade-in">
           <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-40" />
-          <p>No courses yet</p>
+          <p>No courses match the active filters</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
-          {courses.map((course) => (
+          {filteredCourses.map((course) => (
             <div key={course.id} className="bg-[var(--color-surface-container-lowest)] border border-[var(--color-surface-container)] shadow-[var(--shadow-soft)] rounded-xl p-4">
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>
@@ -671,12 +821,47 @@ function CoursesTab() {
 }
 
 // =============================================
-// USERS TAB (Super Admin only)
+// PASSWORD VIEWER COMPONENT (click to toggle view)
 // =============================================
-function UsersTab() {
+function PasswordViewer({ password, isSuperAdmin }) {
+  const [show, setShow] = useState(false);
+  
+  if (!isSuperAdmin) {
+    return <span> • Password: ••••••••</span>;
+  }
+
+  const pwdText = password || 'N/A';
+
+  return (
+    <span className="inline-flex items-center">
+      <span> • Password: {show ? pwdText : '••••••••'}</span>
+      {password && password !== 'N/A' && (
+        <button
+          type="button"
+          onClick={() => setShow(!show)}
+          className="p-0.5 rounded hover:bg-[var(--color-surface-container-high)] text-[var(--color-outline)] hover:text-[var(--color-on-surface)] transition-colors cursor-pointer select-none ml-1 inline-flex items-center justify-center align-middle"
+          style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+          title={show ? "Click to hide password" : "Click to view password"}
+        >
+          {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+        </button>
+      )}
+    </span>
+  );
+}
+
+// =============================================
+// USERS TAB
+// =============================================
+function UsersTab({ showConfirm }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const { isSuperAdmin } = useAuth();
+  
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newName, setNewName] = useState('');
+  const [showRenameModal, setShowRenameModal] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -695,6 +880,7 @@ function UsersTab() {
   }
 
   async function toggleAdmin(user) {
+    if (!isSuperAdmin) return;
     const newRole =
       user.role === 'admin' ? 'student' : 'admin';
     try {
@@ -705,17 +891,62 @@ function UsersTab() {
     }
   }
 
-  async function handleDeleteUser(user) {
+  async function handleDelete(user) {
+    if (!isSuperAdmin) return;
     if (user.role === 'super_admin') return;
-    if (!confirm(`Remove ${user.name} (${user.reg_no})? This removes their Firestore profile only.`))
-      return;
+    showConfirm(
+      'Remove User',
+      `Are you sure you want to remove ${user.name || user.email} (${user.reg_no})? This will permanently delete their FOSync profile.`,
+      async () => {
+        try {
+          await deleteUserDoc(user.id);
+          await loadUsers();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    );
+  }
+
+  async function handleResetPassword(user) {
+    showConfirm(
+      'Reset Password',
+      `Are you sure you want to reset the password for ${user.name || user.email} (${user.reg_no})? The new password will be "FOS123".`,
+      async () => {
+        try {
+          await updateUserProfile(user.id, {
+            password: 'FOS123',
+            oldPassword: user.password || '',
+            authPasswordNeedsReset: true
+          });
+          await loadUsers();
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      'Reset',
+      false
+    );
+  }
+
+  const startRename = (user) => {
+    if (!isSuperAdmin) return;
+    setSelectedUser(user);
+    setNewName(user.name || '');
+    setShowRenameModal(true);
+  };
+
+  const handleRename = async () => {
+    if (!isSuperAdmin || !selectedUser || !newName.trim()) return;
     try {
-      await deleteUserDoc(user.id);
+      await updateUserProfile(selectedUser.id, { name: newName.trim() });
+      setShowRenameModal(false);
+      setSelectedUser(null);
       await loadUsers();
     } catch (err) {
       console.error(err);
     }
-  }
+  };
 
   const filtered = users.filter(
     (u) =>
@@ -754,8 +985,22 @@ function UsersTab() {
                   {user.name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-[var(--color-on-surface)] truncate">{user.name}</p>
-                  <p className="text-xs text-[var(--color-outline)]">{user.reg_no} • {user.degree}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-[var(--color-on-surface)] truncate">{user.name}</p>
+                    {isSuperAdmin && (
+                      <button
+                        onClick={() => startRename(user)}
+                        className="p-1 rounded hover:bg-[var(--color-surface-container-high)] text-[var(--color-outline)] hover:text-[var(--color-on-surface)] transition-colors cursor-pointer"
+                        title="Rename User"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-[var(--color-outline)]">
+                    {user.reg_no} • {user.degree}
+                    <PasswordViewer password={user.password} isSuperAdmin={isSuperAdmin} />
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -769,7 +1014,18 @@ function UsersTab() {
                 >
                   {capitalize(user.role)}
                 </span>
+                
                 {user.role !== 'super_admin' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleResetPassword(user)}
+                  >
+                    Reset Password
+                  </Button>
+                )}
+
+                {isSuperAdmin && user.role !== 'super_admin' && (
                   <>
                     <Button
                       variant="ghost"
@@ -779,7 +1035,7 @@ function UsersTab() {
                       {user.role === 'admin' ? 'Demote' : 'Promote'}
                     </Button>
                     <button
-                      onClick={() => handleDeleteUser(user)}
+                      onClick={() => handleDelete(user)}
                       className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--color-on-surface-variant)] hover:text-red-400 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -791,6 +1047,33 @@ function UsersTab() {
           ))}
         </div>
       )}
+
+      {/* Rename Modal */}
+      <Modal
+        isOpen={showRenameModal}
+        onClose={() => setShowRenameModal(false)}
+        title="Rename User"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <Input
+            id="rename-user-name"
+            label={`New name for ${selectedUser?.reg_no}`}
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Enter real name"
+            required
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setShowRenameModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRename} disabled={!newName.trim() || newName.trim() === selectedUser?.name}>
+              Save Change
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -798,7 +1081,7 @@ function UsersTab() {
 // =============================================
 // ALLOWED USERS TAB (Super Admin only)
 // =============================================
-function AllowedUsersTab() {
+function AllowedUsersTab({ showConfirm }) {
   const [allowedUsers, setAllowedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -837,14 +1120,19 @@ function AllowedUsersTab() {
     }
   }
 
-  async function handleRemove(regNo) {
-    if (!confirm(`Remove ${regNo} from allowed list?`)) return;
-    try {
-      await removeAllowedUser(regNo);
-      await loadAllowed();
-    } catch (err) {
-      console.error(err);
-    }
+  async function removeAllowed(regNo) {
+    showConfirm(
+      'Remove Access',
+      `Are you sure you want to revoke system access for ${regNo}? They will no longer be able to log in.`,
+      async () => {
+        try {
+          await removeAllowedUser(regNo);
+          await loadAllowed();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    );
   }
 
   async function handleCSVUpload() {
@@ -924,7 +1212,7 @@ function AllowedUsersTab() {
                 <span className="text-sm text-[var(--color-on-surface-variant)]">{user.degree}</span>
               </div>
               <button
-                onClick={() => handleRemove(user.reg_no)}
+                onClick={() => removeAllowed(user.reg_no)}
                 className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--color-outline)] hover:text-red-400 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -1008,13 +1296,21 @@ function AllowedUsersTab() {
 // =============================================
 // COURSE LINKER TAB
 // =============================================
-function CourseLinkerTab() {
+function CourseLinkerTab({ showConfirm }) {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [draggedCourseId, setDraggedCourseId] = useState(null);
   const [dragStartPos, setDragStartPos] = useState(null);
   const [dragCurrentPos, setDragCurrentPos] = useState(null);
   const [newlyLinkedIds, setNewlyLinkedIds] = useState([]);
+
+  // Filters
+  const [filterType, setFilterType] = useState('all');
+  const [filterYear, setFilterYear] = useState('all');
+  const [filterDegree, setFilterDegree] = useState('all');
+
+  const [activeHighlight, setActiveHighlight] = useState(null);
+  const [justDragged, setJustDragged] = useState(false);
 
   useEffect(() => {
     loadCourses();
@@ -1036,6 +1332,10 @@ function CourseLinkerTab() {
     setDraggedCourseId(null);
     setDragStartPos(null);
     setDragCurrentPos(null);
+    // Suppress trailing click event after drag ends
+    setTimeout(() => {
+      setJustDragged(false);
+    }, 150);
   }
 
   async function handleDrop(e, targetCourseId) {
@@ -1067,7 +1367,16 @@ function CourseLinkerTab() {
   }
 
   function handleDragStart(e, courseId) {
+    setJustDragged(true);
     setDraggedCourseId(courseId);
+    e.dataTransfer.setData('text/plain', courseId);
+    e.dataTransfer.effectAllowed = 'link';
+    
+    // Hide default drag ghost element
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(img, 0, 0);
+
     const rect = e.currentTarget.getBoundingClientRect();
     setDragStartPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
   }
@@ -1078,14 +1387,133 @@ function CourseLinkerTab() {
   }
 
   async function handleUnlink(courseIdA, courseIdB) {
-    if (!confirm('Are you sure you want to unlink these courses?')) return;
-    try {
-      await unlinkCourses(courseIdA, courseIdB);
-      await loadCourses();
-    } catch (err) {
-      console.error(err);
-    }
+    showConfirm(
+      'Unlink Course',
+      'Are you sure you want to unlink these courses? They will no longer share the same event stream.',
+      async () => {
+        try {
+          await unlinkCourses(courseIdA, courseIdB);
+          await loadCourses();
+        } catch (err) {
+          console.error('Failed to unlink:', err);
+        }
+      }
+    );
   }
+
+  const filteredCourses = courses.filter((c) => {
+    if (filterType === 'core' && c.is_elective) return false;
+    if (filterType === 'elective' && !c.is_elective) return false;
+    if (filterYear !== 'all' && c.year !== filterYear) return false;
+    if (filterDegree !== 'all' && (!c.degrees || !c.degrees.includes(filterDegree))) return false;
+    return true;
+  });
+
+  // Connected components algorithm to identify link groups
+  const linkGroups = [];
+  const visited = new Set();
+  courses.forEach((course) => {
+    if (visited.has(course.course_id)) return;
+    if (!course.linked_courses || course.linked_courses.length === 0) return;
+
+    const group = [];
+    const queue = [course.course_id];
+    visited.add(course.course_id);
+
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      group.push(currentId);
+
+      const currCourse = courses.find((c) => c.course_id === currentId);
+      if (currCourse && currCourse.linked_courses) {
+        currCourse.linked_courses.forEach((linkedId) => {
+          if (!visited.has(linkedId)) {
+            visited.add(linkedId);
+            queue.push(linkedId);
+          }
+        });
+      }
+    }
+    if (group.length > 1) {
+      group.sort();
+      linkGroups.push(group);
+    }
+  });
+
+  // For courses that are shared across multiple degrees but not manually linked,
+  // we add them as their own link group so they receive a distinct group color.
+  courses.forEach((course) => {
+    if (course.degrees?.length > 1) {
+      const inGroup = linkGroups.some(g => g.includes(course.course_id));
+      if (!inGroup) {
+        linkGroups.push([course.course_id]);
+      }
+    }
+  });
+
+  linkGroups.sort((a, b) => a[0].localeCompare(b[0]));
+
+  const groupColors = [
+    {
+      border: 'border-2 border-emerald-500/80 shadow-[0_0_12px_rgba(16,185,129,0.35)]',
+      indicator: 'bg-emerald-500',
+      badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      ping: 'border-emerald-500',
+    },
+    {
+      border: 'border-2 border-purple-500/80 shadow-[0_0_12px_rgba(168,85,247,0.35)]',
+      indicator: 'bg-purple-500',
+      badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+      ping: 'border-purple-500',
+    },
+    {
+      border: 'border-2 border-red-500/80 shadow-[0_0_12px_rgba(239,68,68,0.35)]',
+      indicator: 'bg-red-500',
+      badge: 'bg-red-500/10 text-red-400 border-red-500/20',
+      ping: 'border-red-500',
+    },
+    {
+      border: 'border-2 border-blue-500/80 shadow-[0_0_12px_rgba(59,130,246,0.35)]',
+      indicator: 'bg-blue-500',
+      badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+      ping: 'border-blue-500',
+    },
+    {
+      border: 'border-2 border-amber-500/80 shadow-[0_0_12px_rgba(245,158,11,0.35)]',
+      indicator: 'bg-amber-500',
+      badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      ping: 'border-amber-500',
+    },
+    {
+      border: 'border-2 border-pink-500/80 shadow-[0_0_12px_rgba(236,72,153,0.35)]',
+      indicator: 'bg-pink-500',
+      badge: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+      ping: 'border-pink-500',
+    },
+    {
+      border: 'border-2 border-cyan-500/80 shadow-[0_0_12px_rgba(6,182,212,0.35)]',
+      indicator: 'bg-cyan-500',
+      badge: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+      ping: 'border-cyan-500',
+    },
+  ];
+
+  const getCourseGroupColor = (courseId) => {
+    const idx = linkGroups.findIndex((g) => g.includes(courseId));
+    if (idx === -1) return null;
+    return groupColors[idx % groupColors.length];
+  };
+
+  const handleCardClick = (courseId, degree) => {
+    if (justDragged) return;
+    const group = linkGroups.find((g) => g.includes(courseId));
+    if (group) {
+      setActiveHighlight({ courseId, group, degree });
+      setTimeout(() => {
+        setActiveHighlight(null);
+      }, 2000);
+    }
+  };
 
   if (loading) {
     return (
@@ -1098,7 +1526,13 @@ function CourseLinkerTab() {
   }
 
   return (
-    <div className="space-y-4 relative">
+    <div 
+      className="space-y-4 relative"
+      onDragOver={(e) => {
+        e.preventDefault();
+        handleDrag(e);
+      }}
+    >
       {/* Live Wire Thread */}
       {dragStartPos && dragCurrentPos && (
         <svg className="fixed inset-0 pointer-events-none z-[100] w-full h-full">
@@ -1125,14 +1559,58 @@ function CourseLinkerTab() {
         </p>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3 bg-[var(--color-surface-container-low)] p-3 rounded-2xl border border-[var(--color-surface-container)]">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-[var(--color-on-surface-variant)]">Type:</span>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-2.5 py-1.5 text-xs font-medium bg-[var(--color-surface-container-lowest)] rounded-lg text-[var(--color-on-surface)] border border-[var(--color-surface-container)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none cursor-pointer"
+          >
+            <option value="all">All Types</option>
+            <option value="core">Core</option>
+            <option value="elective">Elective</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-[var(--color-on-surface-variant)]">Year:</span>
+          <select
+            value={filterYear}
+            onChange={(e) => setFilterYear(e.target.value)}
+            className="px-2.5 py-1.5 text-xs font-medium bg-[var(--color-surface-container-lowest)] rounded-lg text-[var(--color-on-surface)] border border-[var(--color-surface-container)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none cursor-pointer"
+          >
+            <option value="all">All Years</option>
+            <option value="3">Year 3</option>
+            <option value="4">Year 4</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-[var(--color-on-surface-variant)]">Degree:</span>
+          <select
+            value={filterDegree}
+            onChange={(e) => setFilterDegree(e.target.value)}
+            className="px-2.5 py-1.5 text-xs font-medium bg-[var(--color-surface-container-lowest)] rounded-lg text-[var(--color-on-surface)] border border-[var(--color-surface-container)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none cursor-pointer"
+          >
+            <option value="all">All Degrees</option>
+            <option value="Data Science">Data Science</option>
+            <option value="Statistics">Statistics</option>
+            <option value="Applied Statistics">Applied Statistics</option>
+            <option value="Industrial Statistics">Industrial Statistics</option>
+          </select>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
         {DEGREES.map((degree) => {
-          let degreeCourses = courses.filter((c) => c.degrees?.includes(degree));
+          if (filterDegree !== 'all' && degree !== filterDegree) return null;
+          let degreeCourses = filteredCourses.filter((c) => c.degrees?.includes(degree));
           
           // Sort linked courses to the top
           degreeCourses.sort((a, b) => {
-            const aHasLinks = (a.linked_courses?.length || 0) > 0;
-            const bHasLinks = (b.linked_courses?.length || 0) > 0;
+            const aHasLinks = (a.linked_courses?.length || 0) > 0 || (a.degrees?.length || 0) > 1;
+            const bHasLinks = (b.linked_courses?.length || 0) > 0 || (b.degrees?.length || 0) > 1;
             if (aHasLinks && !bHasLinks) return -1;
             if (!aHasLinks && bHasLinks) return 1;
             return a.course_id.localeCompare(b.course_id);
@@ -1144,10 +1622,13 @@ function CourseLinkerTab() {
                 <h3 className="font-medium text-[var(--color-on-surface)] text-sm">{degree}</h3>
                 <p className="text-xs text-[var(--color-outline)]">{degreeCourses.length} courses</p>
               </div>
-
               <div className="flex flex-col gap-2">
                 {degreeCourses.map((course) => {
-                  const hasLinks = course.linked_courses?.length > 0;
+                  const hasLinks = (course.linked_courses?.length > 0) || (course.degrees?.length > 1);
+                  const isPulsing = activeHighlight && 
+                    activeHighlight.group.includes(course.course_id) && 
+                    !(activeHighlight.course_id === course.course_id && activeHighlight.degree === degree);
+
                   return (
                     <div
                       key={course.course_id}
@@ -1155,14 +1636,20 @@ function CourseLinkerTab() {
                       onDragStart={(e) => handleDragStart(e, course.course_id)}
                       onDrag={(e) => handleDrag(e)}
                       onDragEnd={clearDragState}
-                      onDragOver={(e) => e.preventDefault()}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'link';
+                        handleDrag(e);
+                      }}
                       onDrop={(e) => handleDrop(e, course.course_id)}
+                      onClick={() => handleCardClick(course.course_id, degree)}
                       className={`
                         relative bg-[var(--color-surface-container-lowest)] 
                         shadow-[var(--shadow-soft)] rounded-xl p-3 
-                        transition-colors cursor-grab active:cursor-grabbing
+                        transition-all duration-300 cursor-pointer active:cursor-grabbing
+                        ${isPulsing ? 'scale-[1.03] z-10' : ''}
                         ${hasLinks 
-                          ? 'border-2 border-green-500/80 shadow-[0_0_12px_rgba(34,197,94,0.3)]' 
+                          ? (getCourseGroupColor(course.course_id)?.border || 'border-2 border-green-500/80 shadow-[0_0_12px_rgba(34,197,94,0.3)]')
                           : 'border border-[var(--color-surface-container-high)]/50 hover:border-[var(--color-primary)]/50'
                         }
                       `}
@@ -1171,38 +1658,68 @@ function CourseLinkerTab() {
                       {newlyLinkedIds.includes(course.course_id) && (
                         <div className="absolute inset-0 rounded-xl border-4 border-green-400 animate-[ping_1s_cubic-bezier(0,0,0.2,1)_1] pointer-events-none" />
                       )}
-                      {/* Wire / Green Line indicator */}
-                      {hasLinks && (
-                        <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1/2 bg-green-500 rounded-l-md pointer-events-none" />
+                      {/* Smooth double ripple animation (2 waves together) for counterparts on click highlight */}
+                      {isPulsing && (
+                        <>
+                          <div className={`absolute inset-0 rounded-xl border-4 animate-[ping_1.6s_cubic-bezier(0,0,0.2,1)_infinite] opacity-60 pointer-events-none ${getCourseGroupColor(course.course_id)?.ping || 'border-green-500'}`} />
+                          <div className={`absolute inset-0 rounded-xl border-4 animate-[ping_1.6s_cubic-bezier(0,0,0.2,1)_infinite] [animation-delay:0.2s] opacity-30 pointer-events-none ${getCourseGroupColor(course.course_id)?.ping || 'border-green-500'}`} />
+                        </>
                       )}
-                    <div className="flex justify-between items-start mb-2">
+                      {/* Wire / Link Line indicator */}
+                      {hasLinks && (
+                        <div className={`absolute -left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1/2 rounded-l-md pointer-events-none ${getCourseGroupColor(course.course_id)?.indicator || 'bg-green-500'}`} />
+                      )}
+                    <div className="flex justify-between items-center mb-2">
                       <div className="font-mono text-sm font-bold text-[var(--color-primary)]">
                         {course.course_id}
                       </div>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${course.is_elective ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
+                        {course.is_elective ? 'Elective' : 'Core'}
+                      </span>
                     </div>
                     <div className="text-sm text-[var(--color-on-surface)] font-medium line-clamp-2 mb-2">
                       {course.aliases?.[0] || 'Unnamed Course'}
                     </div>
 
-                    {/* Show existing links */}
-                    {course.linked_courses?.length > 0 && (
+                    {/* Show existing links and shared degrees */}
+                    {hasLinks && (
                       <div className="pt-2 mt-2 border-t border-[var(--color-surface-container-high)]/50 flex flex-wrap gap-1.5">
-                        {course.linked_courses.map(linkedId => (
-                          <div 
-                            key={linkedId}
-                            className="flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md bg-[var(--color-surface-container-high)] text-xs text-[var(--color-on-surface-variant)]"
-                          >
-                            <Link2 className="w-3 h-3 text-[var(--color-on-surface-variant)]" />
-                            {linkedId}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleUnlink(course.course_id, linkedId); }}
-                              className="ml-1 p-0.5 rounded-sm hover:bg-red-500/20 hover:text-red-400 transition-colors"
-                              title="Unlink"
+                        {/* Auto-linked degrees */}
+                        {course.degrees?.length > 1 && course.degrees.map(deg => {
+                          if (deg === degree) return null;
+                          const linkedColor = getCourseGroupColor(course.course_id);
+                          return (
+                            <div 
+                              key={deg}
+                              className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-xs border ${linkedColor?.badge || 'bg-[var(--color-surface-container-high)] text-[var(--color-on-surface-variant)] border-transparent'}`}
+                              title={`Auto-linked across: ${deg}`}
                             >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
+                              <BookOpen className="w-3 h-3" />
+                              {deg}
+                            </div>
+                          );
+                        })}
+
+                        {/* Explicit manually linked courses */}
+                        {course.linked_courses?.map(linkedId => {
+                          const linkedColor = getCourseGroupColor(linkedId);
+                          return (
+                            <div 
+                              key={linkedId}
+                              className={`flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md text-xs border ${linkedColor?.badge || 'bg-[var(--color-surface-container-high)] text-[var(--color-on-surface-variant)] border-transparent'}`}
+                            >
+                              <Link2 className="w-3 h-3" />
+                              {linkedId}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleUnlink(course.course_id, linkedId); }}
+                                className="ml-1 p-0.5 rounded-sm hover:bg-red-500/20 hover:text-red-400 transition-colors"
+                                title="Unlink"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1212,6 +1729,754 @@ function CourseLinkerTab() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// =============================================
+// SYSTEM TAB
+// =============================================
+function SystemTab() {
+  const { currentUser, userProfile } = useAuth();
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [securityLevel, setSecurityLevel] = useState('');
+  const [protocol, setProtocol] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleReset = async (e) => {
+    e.preventDefault();
+    if (securityLevel !== 'Omega' || protocol !== 'Agamemnon Contingency') {
+      setError('Invalid authorization credentials.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await resetDatabase(currentUser?.uid, userProfile);
+      setSuccess('Database successfully reset to clean slate!');
+      setSecurityLevel('');
+      setProtocol('');
+      setTimeout(() => {
+        setShowResetModal(false);
+        setSuccess('');
+        window.location.reload(); // Refresh the page to clear local states
+      }, 2500);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to reset database.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSeed = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      await seedDefaultData();
+      setSuccess('Core curriculum courses and default allowed users successfully seeded!');
+      setTimeout(() => {
+        setSuccess('');
+        window.location.reload();
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to seed default data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const data = await exportDatabase();
+      const fileData = JSON.stringify(data, null, 2);
+      const blob = new Blob([fileData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.href = url;
+      
+      const dateStr = new Date().toISOString().split('T')[0];
+      downloadAnchor.download = `fosync_db_backup_${dateStr}.json`;
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      document.body.removeChild(downloadAnchor);
+      URL.revokeObjectURL(url);
+      
+      setSuccess('Database successfully exported to JSON!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to export database.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const parsedData = JSON.parse(event.target.result);
+          
+          if (!parsedData || typeof parsedData !== 'object') {
+            throw new Error('Invalid JSON file format.');
+          }
+
+          await importDatabase(parsedData);
+          setSuccess('Database successfully imported and restored from backup!');
+          
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } catch (err) {
+          console.error(err);
+          setError(err.message || 'Failed to parse JSON file.');
+          setLoading(false);
+        }
+      };
+      
+      reader.onerror = () => {
+        setError('Failed to read backup file.');
+        setLoading(false);
+      };
+      
+      reader.readAsText(file);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to import database.');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-[var(--color-surface-container-lowest)] border border-[var(--color-surface-container-high)]/60 rounded-3xl p-6 md:p-8 space-y-8 max-w-4xl mx-auto shadow-sm animate-fade-in">
+      <div className="flex items-center gap-4 text-red-600 mb-2 border-b border-[var(--color-surface-container-high)]/65 pb-5">
+        <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shrink-0">
+          <ShieldAlert className="w-6 h-6 text-red-500 animate-pulse" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-[var(--color-on-surface)]">Danger Zone & Backup Tools</h2>
+          <p className="text-xs text-[var(--color-on-surface-variant)] mt-0.5">Sensitive system operations and database management</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs font-semibold text-red-500">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs font-semibold text-emerald-500">
+          {success}
+        </div>
+      )}
+
+      {/* 2-Column Reset & Restore Seed */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Reset Database */}
+        <div className="flex flex-col justify-between p-5 rounded-2xl border border-[var(--color-surface-container-high)] bg-[var(--color-surface-container)]/30">
+          <div className="space-y-3 mb-6">
+            <h3 className="text-base font-bold text-[var(--color-on-surface)] flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-red-500" />
+              Master Database Reset
+            </h3>
+            <p className="text-sm text-[var(--color-on-surface-variant)] leading-relaxed">
+              This operation is <strong>irreversible</strong>. It will wipe out all events, non-admin users, and allowed user configuration lists. Core courses will be preserved.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setError('');
+              setSecurityLevel('');
+              setProtocol('');
+              setShowResetModal(true);
+            }}
+            disabled={loading}
+            className="w-full px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Trash2 className="w-4 h-4" />
+            Reset All Database
+          </button>
+        </div>
+
+        {/* Restore / Seed Default Data */}
+        <div className="flex flex-col justify-between p-5 rounded-2xl border border-[var(--color-surface-container-high)] bg-[var(--color-surface-container)]/30">
+          <div className="space-y-3 mb-6">
+            <h3 className="text-base font-bold text-[var(--color-on-surface)] flex items-center gap-2">
+              <Upload className="w-5 h-5 text-[var(--color-primary)]" />
+              Restore / Seed Default Data
+            </h3>
+            <p className="text-sm text-[var(--color-on-surface-variant)] leading-relaxed">
+              If your database has been reset or is empty, use this tool to seed the core courses catalog for all 4 degrees and default registration keys (<code className="text-xs">2022s19535</code> and <code className="text-xs">2022s19354</code>).
+            </p>
+          </div>
+          <button
+            onClick={handleSeed}
+            disabled={loading}
+            className="w-full px-5 py-3 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-container)] text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Upload className="w-4 h-4" />
+            Seed Default Courses & allowed users
+          </button>
+        </div>
+      </div>
+
+      {/* 2-Column Backup and Restore (Export/Import JSON) */}
+      <div className="border-t border-[var(--color-surface-container-high)]/60 pt-6 space-y-4">
+        <h3 className="text-lg font-bold text-[var(--color-on-surface)]">Database Import & Export</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Export Database */}
+          <div className="flex flex-col justify-between p-5 rounded-2xl border border-[var(--color-surface-container-high)] bg-[var(--color-surface-container)]/30">
+            <div className="space-y-3 mb-6">
+              <h4 className="text-sm font-bold text-[var(--color-on-surface)] flex items-center gap-2">
+                <Download className="w-4 h-4 text-emerald-500" />
+                Export Database backup
+              </h4>
+              <p className="text-sm text-[var(--color-on-surface-variant)] leading-relaxed">
+                Export the entire database structure, configuration lists, profiles, courses, and events into a single JSON file.
+              </p>
+            </div>
+            <button
+              onClick={handleExport}
+              disabled={loading}
+              className="w-full px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              Export to JSON
+            </button>
+          </div>
+
+          {/* Import Database */}
+          <div className="flex flex-col justify-between p-5 rounded-2xl border border-[var(--color-surface-container-high)] bg-[var(--color-surface-container)]/30">
+            <div className="space-y-3 mb-6">
+              <h4 className="text-sm font-bold text-[var(--color-on-surface)] flex items-center gap-2">
+                <Upload className="w-4 h-4 text-indigo-500" />
+                Import Database backup
+              </h4>
+              <p className="text-sm text-[var(--color-on-surface-variant)] leading-relaxed">
+                Import and restore the database structure and records from a previously exported JSON backup file.
+              </p>
+            </div>
+            <div className="relative">
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                disabled={loading}
+                className="hidden"
+                id="database-import-file"
+              />
+              <label
+                htmlFor="database-import-file"
+                className="w-full px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                Select File & Import JSON
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Reset Confirmation Modal */}
+      <Modal 
+        isOpen={showResetModal} 
+        onClose={() => {
+          if (!loading) setShowResetModal(false);
+        }} 
+        title="Confirm Master Database Reset"
+        size="sm"
+      >
+        <form onSubmit={handleReset} className="space-y-5">
+          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-500 leading-relaxed font-semibold">
+            ⚠️ WARNING: This will permanently destroy all records in the Firestore database (events, courses, user profiles, allowed registration lists). This cannot be undone.
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-on-surface-variant)]">
+                Security Level
+              </label>
+              <input
+                type="text"
+                placeholder='Type "Omega"'
+                value={securityLevel}
+                onChange={(e) => setSecurityLevel(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-surface-container-high)] bg-[var(--color-surface-container-lowest)] text-sm text-[var(--color-on-surface)] focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all placeholder:text-[var(--color-outline-variant)]"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-on-surface-variant)]">
+                Protocol Name
+              </label>
+              <input
+                type="password"
+                placeholder='Type "Agamemnon Contingency"'
+                value={protocol}
+                onChange={(e) => setProtocol(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-surface-container-high)] bg-[var(--color-surface-container-lowest)] text-sm text-[var(--color-on-surface)] focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all placeholder:text-[var(--color-outline-variant)]"
+                required
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs font-semibold text-red-500">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs font-semibold text-emerald-500">
+              {success}
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-end pt-2 border-t border-[var(--color-surface-container-high)]">
+            <button
+              type="button"
+              onClick={() => setShowResetModal(false)}
+              disabled={loading}
+              className="px-4 py-2.5 rounded-xl border border-[var(--color-surface-container-high)] bg-transparent hover:bg-[var(--color-surface-container-low)] text-xs font-semibold text-[var(--color-on-surface-variant)] transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || securityLevel !== 'Omega' || protocol !== 'Agamemnon Contingency'}
+              className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-xs font-semibold text-white transition-all shadow-sm cursor-pointer"
+            >
+              {loading ? 'Resetting...' : 'Confirm Reset'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+// =============================================
+// ACTIVITY LOG TAB (Super Admin only)
+// =============================================
+function ActivityLogTab() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    loadLogs();
+  }, []);
+
+  async function loadLogs() {
+    setLoading(true);
+    try {
+      const activityLogs = await getActivityLogs();
+      setLogs(activityLogs);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filteredLogs = logs.filter(log => 
+    (log.user_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (log.user_reg_no || '').toLowerCase().includes(search.toLowerCase()) ||
+    (log.event_title || '').toLowerCase().includes(search.toLowerCase()) ||
+    (log.action || '').toLowerCase().includes(search.toLowerCase()) ||
+    (log.details || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-outline)]" />
+          <input
+            type="text"
+            placeholder="Search activity logs..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--color-surface-container)]/80 border border-[var(--color-surface-container-high)] text-[var(--color-on-surface)] text-sm placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-primary-500/20 transition-all"
+          />
+        </div>
+        <Button variant="secondary" onClick={loadLogs} className="shrink-0">
+          Refresh Logs
+        </Button>
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 rounded-xl bg-[var(--color-surface-container)]/50 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3 stagger-children">
+          {filteredLogs.length === 0 ? (
+            <div className="text-center py-10 text-sm text-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] border border-[var(--color-surface-container)] rounded-2xl">
+              No activity logs found.
+            </div>
+          ) : (
+            filteredLogs.map((log) => {
+              const date = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+              const actionColors = {
+                add: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20',
+                edit: 'bg-amber-500/15 text-amber-500 border-amber-500/20',
+                delete: 'bg-red-500/15 text-red-500 border-red-500/20',
+              };
+
+              return (
+                <div
+                  key={log.id}
+                  className="bg-[var(--color-surface-container-lowest)] border border-[var(--color-surface-container)] shadow-[var(--shadow-soft)] rounded-xl p-4 flex flex-col md:flex-row md:items-start justify-between gap-4"
+                >
+                  <div className="space-y-2 min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${actionColors[log.action] || 'bg-blue-500/15 text-blue-500'}`}>
+                        {log.action}
+                      </span>
+                      <span className="text-sm font-bold text-[var(--color-on-surface)] truncate">
+                        {log.event_title || 'Unnamed Event'}
+                      </span>
+                      <span className="text-xs text-[var(--color-outline)]">
+                        by {log.user_name} ({log.user_reg_no})
+                      </span>
+                    </div>
+                    {log.details && (
+                      <pre className="text-xs text-[var(--color-on-surface-variant)] bg-[var(--color-surface-container)]/50 p-3 rounded-lg border border-[var(--color-surface-container-high)]/60 font-mono whitespace-pre-wrap leading-relaxed max-w-full">
+                        {log.details}
+                      </pre>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-[var(--color-outline)] font-bold shrink-0 self-end md:self-start">
+                    {date.toLocaleString()}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================
+// SEMESTER TAB (Admin only)
+// =============================================
+function SemesterTab({ showConfirm }) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Form state
+  const [form, setForm] = useState({
+    current_semester: '7',
+    batch_year: '2022/2023',
+    start_date: '',
+    end_date: '',
+    mid_sem_break_start: '',
+    mid_sem_break_end: '',
+    study_leave_start: '',
+    study_leave_end: '',
+  });
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  async function loadSettings() {
+    setLoading(true);
+    try {
+      const settings = await getSemesterSettings();
+      if (settings) {
+        const toDateString = (ts) => {
+          if (!ts) return '';
+          const d = ts.toDate ? ts.toDate() : new Date(ts);
+          return d.toISOString().split('T')[0];
+        };
+        setForm({
+          current_semester: settings.current_semester || '7',
+          batch_year: settings.batch_year || '2022/2023',
+          start_date: toDateString(settings.start_date),
+          end_date: toDateString(settings.end_date),
+          mid_sem_break_start: toDateString(settings.mid_sem_break_start),
+          mid_sem_break_end: toDateString(settings.mid_sem_break_end),
+          study_leave_start: toDateString(settings.study_leave_start),
+          study_leave_end: toDateString(settings.study_leave_end),
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load semester settings.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    const toDateObject = (str) => {
+      if (!str) return null;
+      return new Date(str);
+    };
+
+    try {
+      const payload = {
+        current_semester: form.current_semester,
+        batch_year: form.batch_year,
+        start_date: toDateObject(form.start_date),
+        end_date: toDateObject(form.end_date),
+        mid_sem_break_start: toDateObject(form.mid_sem_break_start),
+        mid_sem_break_end: toDateObject(form.mid_sem_break_end),
+        study_leave_start: toDateObject(form.study_leave_start),
+        study_leave_end: toDateObject(form.study_leave_end),
+      };
+
+      await updateSemesterSettings(payload);
+      setSuccess('Semester configuration saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to update settings.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleTransition() {
+    // Determine the next semester
+    const currentSemNum = parseInt(form.current_semester, 10);
+    if (isNaN(currentSemNum)) return;
+    
+    let nextSemNum = currentSemNum + 1;
+    if (nextSemNum > 8) {
+      nextSemNum = 1;
+    }
+    const nextSem = String(nextSemNum);
+
+    // If odd semester, we also increment the senior batch year
+    const isOdd = nextSemNum === 1 || nextSemNum === 3 || nextSemNum === 5 || nextSemNum === 7;
+    let nextBatchYear = form.batch_year;
+    if (isOdd) {
+      const parts = form.batch_year.split('/');
+      const start = parseInt(parts[0], 10);
+      const end = parseInt(parts[1], 10);
+      if (!isNaN(start) && !isNaN(end)) {
+        nextBatchYear = `${start + 1}/${end + 1}`;
+      }
+    }
+
+    const message = isOdd 
+      ? `This will transition the system to Semester ${nextSem} and increment the active senior batch to ${nextBatchYear}. All students will automatically progress to their next academic year, resetting their elective courses. Do you want to proceed?`
+      : `This will transition the system to Semester ${nextSem}. Student academic years will remain the same. Do you want to proceed?`;
+
+    showConfirm(
+      'Start Next Semester',
+      message,
+      async () => {
+        setSaving(true);
+        setError('');
+        setSuccess('');
+        try {
+          // Progress students in Firestore
+          await progressStudentsToNextSemester(nextSem);
+
+          // Update semester settings
+          const toDateObject = (str) => str ? new Date(str) : null;
+          const payload = {
+            current_semester: nextSem,
+            batch_year: nextBatchYear,
+            start_date: toDateObject(form.start_date),
+            end_date: toDateObject(form.end_date),
+            mid_sem_break_start: toDateObject(form.mid_sem_break_start),
+            mid_sem_break_end: toDateObject(form.mid_sem_break_end),
+            study_leave_start: toDateObject(form.study_leave_start),
+            study_leave_end: toDateObject(form.study_leave_end),
+          };
+          await updateSemesterSettings(payload);
+          await loadSettings();
+          setSuccess(`Successfully transitioned to Semester ${nextSem}!`);
+          setTimeout(() => setSuccess(''), 4000);
+        } catch (err) {
+          console.error(err);
+          setError(err.message || 'Transition failed.');
+        } finally {
+          setSaving(false);
+        }
+      },
+      'Proceed',
+      false
+    );
+  }
+
+  // Display computed next semester
+  const currentSemNum = parseInt(form.current_semester, 10);
+  const nextSem = isNaN(currentSemNum) ? '' : String(currentSemNum === 8 ? 1 : currentSemNum + 1);
+
+  return (
+    <div className="bg-[var(--color-surface-container-lowest)] border border-[var(--color-surface-container-high)]/60 rounded-3xl p-6 md:p-8 space-y-8 max-w-4xl mx-auto shadow-sm">
+      <div className="flex items-center gap-4 text-[var(--color-primary)] mb-2 border-b border-[var(--color-surface-container-high)]/65 pb-5">
+        <div className="w-12 h-12 rounded-2xl bg-[var(--color-primary-fixed)]/25 flex items-center justify-center border border-[var(--color-primary)]/20 shrink-0">
+          <Shield className="w-6 h-6 animate-pulse" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-[var(--color-on-surface)]">Semester & Recurrence Settings</h2>
+          <p className="text-xs text-[var(--color-on-surface-variant)] mt-0.5">Configure active semesters, holiday exclusions, and student progression</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs font-semibold text-red-500">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs font-semibold text-emerald-500">
+          {success}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="space-y-4 animate-pulse">
+          <div className="h-10 bg-[var(--color-surface-container-high)] rounded-lg" />
+          <div className="h-10 bg-[var(--color-surface-container-high)] rounded-lg" />
+          <div className="h-10 bg-[var(--color-surface-container-high)] rounded-lg" />
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Select
+              id="sem-select"
+              label="Current Semester"
+              value={form.current_semester}
+              onChange={(e) => setForm({ ...form, current_semester: e.target.value })}
+              options={[
+                { value: '1', label: 'Semester 1' },
+                { value: '2', label: 'Semester 2' },
+                { value: '3', label: 'Semester 3' },
+                { value: '4', label: 'Semester 4' },
+                { value: '5', label: 'Semester 5' },
+                { value: '6', label: 'Semester 6' },
+                { value: '7', label: 'Semester 7' },
+                { value: '8', label: 'Semester 8' },
+              ]}
+            />
+
+            <Input
+              id="sem-batch"
+              label="Active Senior Batch (Year 4)"
+              placeholder="e.g. 2022/2023"
+              value={form.batch_year}
+              onChange={(e) => setForm({ ...form, batch_year: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input
+              id="sem-start"
+              label="Semester Start Date"
+              type="date"
+              value={form.start_date}
+              onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+            />
+            <Input
+              id="sem-end"
+              label="Semester End Date"
+              type="date"
+              value={form.end_date}
+              onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+            />
+          </div>
+
+          <div className="border-t border-[var(--color-surface-container-high)]/60 pt-6 space-y-4">
+            <h3 className="text-base font-bold text-[var(--color-on-surface)]">Holiday & Break Exclusions</h3>
+            <p className="text-xs text-[var(--color-on-surface-variant)]">
+              Recurring calendar events will automatically exclude and skip these date ranges.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                id="break-start"
+                label="Mid-Semester Break Start"
+                type="date"
+                value={form.mid_sem_break_start}
+                onChange={(e) => setForm({ ...form, mid_sem_break_start: e.target.value })}
+              />
+              <Input
+                id="break-end"
+                label="Mid-Semester Break End"
+                type="date"
+                value={form.mid_sem_break_end}
+                onChange={(e) => setForm({ ...form, mid_sem_break_end: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                id="leave-start"
+                label="Exam Study Leave Start"
+                type="date"
+                value={form.study_leave_start}
+                onChange={(e) => setForm({ ...form, study_leave_start: e.target.value })}
+              />
+              <Input
+                id="leave-end"
+                label="Exam Study Leave End"
+                type="date"
+                value={form.study_leave_end}
+                onChange={(e) => setForm({ ...form, study_leave_end: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 border-t border-[var(--color-surface-container-high)]/60">
+            <Button
+              onClick={handleTransition}
+              disabled={saving}
+              variant="secondary"
+            >
+              Start Semester {nextSem}
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save Configuration'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

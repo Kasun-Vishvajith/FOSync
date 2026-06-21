@@ -10,8 +10,36 @@ export const KEYWORD_GROUPS = {
   lecture: ['lecture', 'lectur', 'lecutre', 'class', 'cls', 'lec'],
   practical: ['practical', 'practcal', 'pratical', 'lab', 'labo', 'prac'],
   tutorial: ['tutorial', 'tutoral', 'tutrial', 'tut', 'tute'],
-  action: ['add', 'ad', 'aad', 'create', 'creat', 'crt', 'new', 'nw', 'schedule', 'sched', 'shedule', 'make', 'mk']
+  action: ['add', 'ad', 'aad', 'create', 'creat', 'crt', 'new', 'nw', 'schedule', 'sched', 'shedule', 'make', 'mk'],
+  
+  // New groups
+  viewAction: ['show', 'list', 'find', 'display', 'what', 'view', 'shw', 'lst', 'fnd', 'fid', 'displa', 'displya', 'wat', 'vw', 'viw'],
+  dateFilter: ['today', 'tomorrow', 'this week', 'next week', 'upcoming', 'tomorow', 'tommorow', 'todey', 'upcomming', 'upcoing'],
+  updateAction: ['edit', 'update', 'change', 'reschedule', 'move', 'modify', 'edt', 'eidt', 'updat', 'updte', 'chang', 'chnge', 'reschedul', 'reschdule', 'mve', 'modfy', 'modyfy'],
+  deleteAction: ['delete', 'remove', 'cancel', 'clear', 'delet', 'dlete', 'deltee', 'remve', 'rmove', 'cancle', 'cncel', 'cncl', 'clera', 'clr'],
+  help: ['help', 'hi', 'hello', 'hey', 'assist', 'commands', 'hlp', 'halp', 'helo', 'hii', 'heyy', 'assit', 'asist', 'comands'],
+  confirmYes: ['yes', 'confirm', 'ok', 'okay', 'sure', 'yess', 'ye', 'confrm', 'cofirm', 'okey', 'suree'],
+  confirmNo: ['no', 'cancel that', 'nevermind', 'stop', 'abort', 'noo', 'n', 'nevermnd', 'nvm', 'stp', 'abrt'],
+  recurrence: ['every', 'daily', 'weekly', 'recurring', 'repeat', 'evry', 'evey', 'dayli', 'weekl', 'weekley', 'recuring', 'recurrng', 'repeet', 'repeatt'],
+  locationTrigger: ['at', 'in', 'room', 'venue', 'hall', 'lab no', 'located', 'rm', 'vanue', 'venu', 'hal', 'loctaed', 'lcoated']
 };
+
+/**
+ * Normalizes plurals by stripping trailing 's' or 'es' for words of length >= 4.
+ */
+export function normalizePlural(word) {
+  if (!word || word.length < 4) return word;
+  if (word.endsWith('sses')) {
+    return word.slice(0, -2); // classes -> class
+  }
+  if (word.endsWith('es')) {
+    return word.slice(0, -2);
+  }
+  if (word.endsWith('s') && !word.endsWith('ss')) {
+    return word.slice(0, -1);
+  }
+  return word;
+}
 
 /**
  * Normalizes user text for parser operations.
@@ -24,7 +52,7 @@ export function normalizeText(text) {
   if (!text) return '';
   return text
     .toLowerCase()
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, ' ') // replace symbols with spaces to prevent merging words
+    .replace(new RegExp('[.,/#!$%^&*;:{}=\\-_`~()?]', 'g'), ' ') // replace symbols with spaces to prevent merging words
     .replace(/\s+/g, ' ')                         // replace multiple spaces with a single space
     .trim();
 }
@@ -87,9 +115,11 @@ export function matchKeywordGroup(normalizedText, groupKeywords, useSimilarity =
   for (const kw of groupKeywords) {
     if (kw.includes(' ')) continue; // already checked
 
+    const normKw = normalizePlural(kw);
     for (const w of words) {
-      if (w === kw) return true;
-      if (useSimilarity && isSimilar(w, kw)) return true;
+      const normW = normalizePlural(w);
+      if (normW === normKw) return true;
+      if (useSimilarity && isSimilar(normW, normKw)) return true;
     }
   }
 
@@ -112,3 +142,19 @@ export function detectCreateIntent(normalizedText) {
 
   return hasAction && hasEventType;
 }
+
+export function detectUpdateIntent(normalizedText) {
+  return matchKeywordGroup(normalizedText, KEYWORD_GROUPS.updateAction, true);
+}
+
+export function detectDeleteIntent(normalizedText) {
+  return matchKeywordGroup(normalizedText, KEYWORD_GROUPS.deleteAction, true);
+}
+
+export function detectConversationalControl(normalizedText) {
+  if (matchKeywordGroup(normalizedText, KEYWORD_GROUPS.help, true)) return 'help';
+  if (matchKeywordGroup(normalizedText, KEYWORD_GROUPS.confirmYes, true)) return 'yes';
+  if (matchKeywordGroup(normalizedText, KEYWORD_GROUPS.confirmNo, true)) return 'no';
+  return null;
+}
+

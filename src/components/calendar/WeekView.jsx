@@ -5,10 +5,10 @@ import {
   isToday,
   isSameDay,
 } from 'date-fns';
-import { getDegreeColor, getEventTypeColor } from '../../utils/helpers';
+import { getEventTypeColor } from '../../utils/helpers';
 import { TIME_SLOTS } from '../../utils/constants';
 
-export default function WeekView({ currentDate, events, courseMap, onEventClick, onDayClick }) {
+export default function WeekView({ currentDate, events, onEventClick, onDayClick }) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -73,58 +73,153 @@ export default function WeekView({ currentDate, events, courseMap, onEventClick,
         </div>
 
         {/* Time Grid */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] flex-1 min-h-0 overflow-y-auto custom-scrollbar relative">
-          {TIME_SLOTS.map((slot) => (
-            <div key={slot.hour} className="contents">
-              {/* Time Label */}
-              <div className="h-20 flex items-start justify-end pr-3 pt-1 border-b border-[var(--color-surface-container)]">
+        <div className="grid grid-cols-[60px_1fr] flex-1 min-h-0 overflow-y-auto custom-scrollbar relative">
+          {/* Hour Labels Column */}
+          <div className="flex flex-col select-none">
+            {TIME_SLOTS.map((slot) => (
+              <div key={slot.hour} className="h-20 flex items-start justify-end pr-3 pt-1 border-b border-[var(--color-surface-container)]">
                 <span className="text-xs text-[var(--color-outline-variant)] font-medium">
                   {slot.label}
                 </span>
               </div>
-              {/* Day Cells */}
-              {weekDays.map((day) => {
-                const key = format(day, 'yyyy-MM-dd');
-                const dayEvents = eventsByDay[key] || [];
-                const today = isToday(day);
-                // Show events that roughly match this time slot
-                const slotEvents = dayEvents.filter((e) => {
-                  const d = e.date?.toDate ? e.date.toDate() : new Date(e.date);
-                  return d.getHours() === slot.hour;
-                });
+            ))}
+          </div>
 
-                return (
-                  <div
-                    key={`${key}-${slot.hour}`}
-                    className={`
-                      h-20 border-l border-b border-[var(--color-surface-container)] p-1 relative hover:bg-[var(--color-surface-container-low)] cursor-pointer transition-colors
-                      ${today ? 'bg-[var(--color-surface-container-low)]/50' : ''}
-                    `}
-                    onClick={() => onDayClick && onDayClick(day, dayEvents)}
-                  >
-                    {slotEvents.map((event) => {
-                      const course = courseMap[event.course_id];
-                      const colors = getEventTypeColor(event.type);
-                      return (
-                        <button
-                          key={event.id}
-                          onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
-                          className="w-full text-left px-2 py-1.5 rounded-lg text-xs font-semibold truncate transition-all duration-150 hover:scale-[1.02] mb-1 cursor-pointer border shadow-sm"
-                          style={{
-                            backgroundColor: colors.bg,
-                            borderColor: colors.border,
-                            color: colors.text,
-                          }}
-                        >
-                          {event.title}
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+          {/* Days Grid overlay */}
+          <div className="grid grid-cols-7 relative h-[1200px] border-r border-[var(--color-surface-container)]">
+            {weekDays.map((day) => {
+              const key = format(day, 'yyyy-MM-dd');
+              const dayEvents = eventsByDay[key] || [];
+              const today = isToday(day);
+              
+              // Slotted events are between 6 AM and 8 PM
+              const slottedEvents = dayEvents.filter((e) => {
+                const d = e.date?.toDate ? e.date.toDate() : new Date(e.date);
+                const hour = d.getHours();
+                return hour >= 6 && hour <= 20;
+              });
+
+              // Sort events by starting time
+              const sortedSlotted = [...slottedEvents].sort((a, b) => {
+                const da = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+                const db = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+                return da - db;
+              });
+
+              // Calculate columns for overlapping events
+              const columns = [];
+              sortedSlotted.forEach(event => {
+                const d = event.date?.toDate ? event.date.toDate() : new Date(event.date);
+                const start = d.getHours() + d.getMinutes() / 60;
+                const ed = event.end_date ? (event.end_date.toDate ? event.end_date.toDate() : new Date(event.end_date)) : null;
+                const end = ed ? (ed.getHours() + ed.getMinutes() / 60) : (start + 1);
+                
+                let colIndex = 0;
+                while (colIndex < columns.length) {
+                  const hasOverlap = columns[colIndex].some(other => {
+                    const od = other.date?.toDate ? other.date.toDate() : new Date(other.date);
+                    const oStart = od.getHours() + od.getMinutes() / 60;
+                    const oed = other.end_date ? (other.end_date.toDate ? other.end_date.toDate() : new Date(other.end_date)) : null;
+                    const oEnd = oed ? (oed.getHours() + oed.getMinutes() / 60) : (oStart + 1);
+                    return start < oEnd && end > oStart;
+                  });
+                  if (!hasOverlap) {
+                    break;
+                  }
+                  colIndex++;
+                }
+                if (!columns[colIndex]) {
+                  columns[colIndex] = [];
+                }
+                columns[colIndex].push(event);
+                event.colIndex = colIndex;
+              });
+
+              // Set total overlap count for each event
+              sortedSlotted.forEach(event => {
+                const d = event.date?.toDate ? event.date.toDate() : new Date(event.date);
+                const start = d.getHours() + d.getMinutes() / 60;
+                const ed = event.end_date ? (event.end_date.toDate ? event.end_date.toDate() : new Date(event.end_date)) : null;
+                const end = ed ? (ed.getHours() + ed.getMinutes() / 60) : (start + 1);
+                
+                let maxColIndex = 0;
+                sortedSlotted.forEach(other => {
+                  const od = other.date?.toDate ? other.date.toDate() : new Date(other.date);
+                  const oStart = od.getHours() + od.getMinutes() / 60;
+                  const oed = other.end_date ? (other.end_date.toDate ? other.end_date.toDate() : new Date(other.end_date)) : null;
+                  const oEnd = oed ? (oed.getHours() + oed.getMinutes() / 60) : (oStart + 1);
+                  if (start < oEnd && end > oStart) {
+                    if (other.colIndex > maxColIndex) {
+                      maxColIndex = other.colIndex;
+                    }
+                  }
+                });
+                event.colCount = maxColIndex + 1;
+              });
+
+              return (
+                <div
+                  key={key}
+                  className={`
+                    relative h-full border-l border-[var(--color-surface-container)]
+                    ${today ? 'bg-[var(--color-surface-container-low)]/40' : ''}
+                  `}
+                >
+                  {/* Background slot cells */}
+                  {TIME_SLOTS.map((slot) => (
+                    <div
+                      key={`${key}-${slot.hour}`}
+                      className="h-20 border-b border-[var(--color-surface-container)] hover:bg-[var(--color-surface-container-low)]/60 transition-colors cursor-pointer"
+                      onClick={() => onDayClick && onDayClick(day, dayEvents)}
+                    />
+                  ))}
+
+                  {/* Absolute Positioned Events */}
+                  {sortedSlotted.map((event) => {
+                    const d = event.date?.toDate ? event.date.toDate() : new Date(event.date);
+                    const start = d.getHours() + d.getMinutes() / 60;
+                    const ed = event.end_date ? (event.end_date.toDate ? event.end_date.toDate() : new Date(event.end_date)) : null;
+                    const end = ed ? (ed.getHours() + ed.getMinutes() / 60) : (start + 1);
+                    
+                    const top = (start - 6) * 80;
+                    const height = Math.max(30, (end - start) * 80);
+                    
+                    const colCount = event.colCount || 1;
+                    const colIndex = event.colIndex || 0;
+                    const width = 100 / colCount;
+                    const left = colIndex * width;
+                    
+                    const colors = getEventTypeColor(event.type);
+                    
+                    return (
+                      <button
+                        key={event.id}
+                        onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
+                        className="absolute px-2 py-1.5 rounded-lg text-xs font-semibold overflow-hidden transition-all duration-150 hover:scale-[1.01] hover:shadow-md cursor-pointer border flex flex-col justify-start items-start text-left"
+                        style={{
+                          top: `${top}px`,
+                          height: `${height}px`,
+                          left: `calc(${left}% + 3px)`,
+                          width: `calc(${width}% - 6px)`,
+                          backgroundColor: colors.bg,
+                          borderColor: colors.border,
+                          color: colors.text,
+                          zIndex: 5,
+                        }}
+                      >
+                        <span className="font-bold block truncate w-full">{event.title}</span>
+                        {height >= 55 && (
+                          <span className="text-[10px] opacity-75 block truncate mt-0.5 w-full">
+                            {format(d, 'h:mm a')} - {ed ? format(ed?.toDate ? ed.toDate() : new Date(ed), 'h:mm a') : format(new Date(d.getTime() + 60*60*1000), 'h:mm a')}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* All-day / unslotted events */}
@@ -140,7 +235,6 @@ export default function WeekView({ currentDate, events, courseMap, onEventClick,
               <p className="text-xs text-[var(--color-outline)] font-semibold mb-3 uppercase tracking-wider">All Day</p>
               <div className="flex flex-wrap gap-2">
                 {unslottedEvents.map((event) => {
-                  const course = courseMap[event.course_id];
                   const colors = getEventTypeColor(event.type);
                   return (
                     <button

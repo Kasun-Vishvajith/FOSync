@@ -81,13 +81,8 @@ export default function AppLayout() {
             </button>
             
             {currentUser ? (
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-full bg-[var(--color-primary-fixed)] border border-[var(--color-primary-fixed-dim)] flex items-center justify-center text-[var(--color-primary)] text-sm font-bold shrink-0">
-                  {userProfile?.name?.charAt(0)?.toUpperCase() || '?'}
-                </div>
-                <span className="text-sm font-medium text-[var(--color-on-surface)] hidden lg:inline">
-                  {userProfile?.name?.split(' ')[0] || 'User'}
-                </span>
+              <div className="bg-[var(--color-surface-container-lowest)] px-4 py-1.5 rounded-full border border-[var(--color-surface-container-high)] shadow-sm text-sm font-semibold text-[var(--color-on-surface)]">
+                {userProfile?.name?.split(' ')[0] || 'User'}
               </div>
             ) : (
               <button

@@ -35,6 +35,7 @@ function PasswordStrength({ password }) {
 export default function SignupPage() {
   const [regNo, setRegNo] = useState('');
   const [name, setName] = useState('');
+  const [academicYear, setAcademicYear] = useState('2022/2023');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -56,7 +57,7 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      await signup(regNo.trim().toLowerCase(), name.trim(), password);
+      await signup(regNo.trim().toLowerCase(), name.trim(), password, academicYear);
       navigate('/setup');
     } catch (err) {
       const msg = err.message || '';
@@ -138,6 +139,23 @@ export default function SignupPage() {
                 required
                 className="w-full px-4 py-3 text-sm font-medium bg-[var(--color-surface-container)] border-none rounded-[var(--radius-lg)] text-[var(--color-on-surface)] focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-[var(--color-surface-container-lowest)] transition-colors placeholder:text-[var(--color-outline-variant)]"
               />
+            </div>
+
+            {/* Batch Year */}
+            <div className="space-y-1.5">
+              <label htmlFor="su-batch" className="block text-sm font-semibold text-[var(--color-on-surface)]">
+                Batch Year
+              </label>
+              <select
+                id="su-batch"
+                value={academicYear} // using academicYear state variable to store selected batch to minimize changes, or rename it later. Let's use academicYear as the state variable holding the batch to keep signup function parameter simple, or we can update signup to accept batch. Let's check AuthContext.
+                onChange={(e) => setAcademicYear(e.target.value)}
+                required
+                className="w-full px-4 py-3 text-sm font-medium bg-[var(--color-surface-container)] border-none rounded-[var(--radius-lg)] text-[var(--color-on-surface)] focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-[var(--color-surface-container-lowest)] transition-colors cursor-pointer"
+              >
+                <option value="2022/2023">2022/2023 (Year 4)</option>
+                <option value="2023/2024">2023/2024 (Year 3)</option>
+              </select>
             </div>
 
             {/* Password */}

@@ -86,6 +86,35 @@ src/
 └── utils/             # Constants, validation helpers
 ```
 
+## NLP Chatbot Assistant
+
+FOSync includes a smart conversational chatbot assistant to manage your schedule. It parses natural language inputs and matches them using keyword mapping (with singular/plural normalization and Levenshtein similarity distance <= 1 for keywords of length >= 3).
+
+### Supported Keywords
+
+| Category | Primary Keywords | Typo & Abbreviation Fallbacks |
+|---|---|---|
+| **View Actions** | `show`, `list`, `find`, `display`, `what`, `view` | `shw`, `lst`, `fnd`, `fid`, `displa`, `displya`, `wat`, `vw`, `viw` |
+| **Date Range Filters** | `today`, `tomorrow`, `this week`, `next week`, `upcoming` | `tomorow`, `tommorow`, `todey`, `upcomming`, `upcoing` |
+| **Event Types / Categories** | `exam`, `deadline`, `lecture`, `practical` (lab), `tutorial` | See `chatMatcher.js` |
+| **Create Actions** | `add`, `create`, `new`, `schedule`, `make` | `ad`, `aad`, `creat`, `crt`, `nw`, `sched`, `shedule`, `mk` |
+| **Update Actions** | `edit`, `update`, `change`, `reschedule`, `move`, `modify` | `edt`, `eidt`, `updat`, `updte`, `chang`, `chnge`, `reschedul`, `reschdule`, `mve`, `modfy`, `modyfy` |
+| **Delete Actions** | `delete`, `remove`, `cancel`, `clear` | `delet`, `dlete`, `deltee`, `remve`, `rmove`, `cancle`, `cncel`, `cncl`, `clera`, `clr` |
+| **Recurrence Triggers** | `every`, `daily`, `weekly`, `recurring`, `repeat` | `evry`, `evey`, `dayli`, `weekl`, `weekley`, `recuring`, `recurrng`, `repeet`, `repeatt` |
+| **Location Triggers** | `at`, `in`, `room`, `venue`, `hall`, `lab no`, `located` | `rm`, `vanue`, `venu`, `hal`, `loctaed`, `lcoated` |
+| **Confirm (Yes)** | `yes`, `confirm`, `ok`, `okay`, `sure` | `yess`, `ye`, `confrm`, `cofirm`, `okey`, `suree` |
+| **Confirm (No)** | `no`, `cancel that`, `nevermind`, `stop`, `abort` | `noo`, `n`, `nevermnd`, `nvm`, `stp`, `abrt` |
+| **Greeting / Help** | `help`, `hi`, `hello`, `hey`, `assist`, `commands` | `hlp`, `halp`, `helo`, `hii`, `heyy`, `assit`, `asist`, `comands` |
+
+### Example Commands
+
+- **Add Event**: `"Add DBMS lecture tomorrow at 9am in Room 204"` or `"Schedule OOP lab Friday 2pm for 2 hours"`
+- **View Schedule**: `"Show all exams"`, `"What's due this week"`, or `"List my labs tomorrow"`
+- **Edit/Reschedule**: `"Reschedule tomorrow's lecture to 3pm"` or `"Change lab duration to 2 hours"`
+- **Delete/Cancel**: `"Delete my 9am lecture"`, `"Cancel Friday's exam"`, or `"Remove all deadlines this week"` (supports bulk delete)
+- **Recurring Events**: `"Add DBMS lecture every Monday at 9am for 12 weeks"`
+
 ## License
 
 See [LICENSE](./LICENSE).
+

@@ -57,7 +57,12 @@ export default function DayViewDrawer({ isOpen, onClose, date, events, courseMap
                 const colors = getEventTypeColor(event.type);
                 
                 const d = event.date?.toDate ? event.date.toDate() : new Date(event.date);
-                const timeString = format(d, 'h:mm a');
+                const ed = event.end_date ? (event.end_date.toDate ? event.end_date.toDate() : new Date(event.end_date)) : null;
+                const timeString = ed 
+                  ? (d.toDateString() === ed.toDateString() 
+                    ? `${format(d, 'h:mm a')} - ${format(ed, 'h:mm a')}`
+                    : `${format(d, 'h:mm a')} - ${format(ed, 'h:mm a (MMM d)')}`) 
+                  : format(d, 'h:mm a');
 
                 return (
                   <div 
@@ -69,9 +74,16 @@ export default function DayViewDrawer({ isOpen, onClose, date, events, courseMap
                     <div className="absolute left-0 top-0 w-1.5 h-full" style={{ backgroundColor: colors.border }} />
                     <div className="ml-2">
                       <div className="flex justify-between items-start mb-2">
-                        <span className="font-bold text-sm" style={{ color: colors.text }}>
-                          {event.course_id}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm" style={{ color: colors.text }}>
+                            {event.course_id}
+                          </span>
+                          {course?.aliases?.[0] && (
+                            <span className="text-xs text-[var(--color-on-surface-variant)] mt-0.5 font-semibold">
+                              {course.aliases[0]}
+                            </span>
+                          )}
+                        </div>
                         <span 
                           className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-md"
                           style={{ backgroundColor: colors.bg, color: colors.text }}
@@ -82,10 +94,16 @@ export default function DayViewDrawer({ isOpen, onClose, date, events, courseMap
                       <h3 className="font-bold text-[var(--color-on-surface)] text-base leading-tight mb-3">
                         {event.title}
                       </h3>
-                      <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-on-surface-variant)] bg-[var(--color-surface-container-low)] w-fit px-2 py-1 rounded-md">
+                      <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-on-surface-variant)] bg-[var(--color-surface-container-low)] w-fit px-2 py-1 rounded-md mb-2">
                         <Clock className="w-3.5 h-3.5" style={{ color: colors.border }} />
                         {timeString}
                       </div>
+                      {event.note && (
+                        <div className="text-xs text-[var(--color-on-surface-variant)] bg-[var(--color-surface-container-low)]/50 p-2.5 rounded-lg border border-[var(--color-surface-container-high)]/30 whitespace-pre-wrap leading-relaxed">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-outline)] block mb-1">Note</span>
+                          {event.note}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
