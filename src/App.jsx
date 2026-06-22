@@ -13,6 +13,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const AdminSetupPage = lazy(() => import('./pages/AdminSetupPage'));
+const TimetablePage = lazy(() => import('./pages/TimetablePage'));
 
 function LoadingFallback() {
   return (
@@ -60,6 +61,14 @@ export default function App() {
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <AdminPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/timetable"
+                  element={
+                    <ProtectedRoute>
+                      <TimetablePage />
                     </ProtectedRoute>
                   }
                 />

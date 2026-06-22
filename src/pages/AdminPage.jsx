@@ -7,17 +7,18 @@ import {
   getAllAllowedUsers, addAllowedUser, removeAllowedUser, bulkAddAllowedUsers,
   resetDatabase, seedDefaultData, exportDatabase, importDatabase,
   getActivityLogs, getSemesterSettings, updateSemesterSettings, progressStudentsToNextSemester,
+  getTimetable, addTimetableEntry, deleteTimetableEntry, updateTimetableEntry,
 } from '../lib/firestore';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Modal from '../components/ui/Modal';
 import { DEGREES, EVENT_TYPES } from '../utils/constants';
-import { capitalize, formatDate } from '../utils/helpers';
+import { capitalize, formatDate, parseCustomTime, getCourseColor } from '../utils/helpers';
 import {
   Shield, CalendarPlus, BookOpen, Users, UserCheck,
   Plus, Trash2, Edit3, Upload, Search, X, Link as LinkIcon, Link2,
-  ShieldAlert, Download, History, Eye, EyeOff,
+  ShieldAlert, Download, History, Eye, EyeOff, Clock, MapPin, AlertCircle,
 } from 'lucide-react';
 import ConfirmModal from '../components/ui/ConfirmModal';
 
@@ -49,6 +50,7 @@ export default function AdminPage() {
       ? [
           { id: 'users', label: 'Users', icon: Users },
           { id: 'semester', label: 'Semester Settings', icon: Shield },
+          { id: 'timetable', label: 'Timetable Manager', icon: Clock },
         ]
       : []),
     ...(isSuperAdmin
@@ -104,6 +106,7 @@ export default function AdminPage() {
         {activeTab === 'links' && <CourseLinkerTab showConfirm={showConfirm} />}
         {activeTab === 'users' && isAdmin && <UsersTab showConfirm={showConfirm} />}
         {activeTab === 'semester' && isAdmin && <SemesterTab showConfirm={showConfirm} />}
+        {activeTab === 'timetable' && isAdmin && <TimetableTab showConfirm={showConfirm} />}
         {activeTab === 'allowed' && isSuperAdmin && <AllowedUsersTab showConfirm={showConfirm} />}
         {activeTab === 'logs' && isSuperAdmin && <ActivityLogTab />}
         {activeTab === 'system' && isSuperAdmin && <SystemTab />}
@@ -2480,3 +2483,953 @@ function SemesterTab({ showConfirm }) {
     </div>
   );
 }
+
+// =============================================
+// TIMETABLE MANAGER TAB (Admin only)
+// =============================================
+function TimetableTab({ showConfirm }) {
+  const [courses, setCourses] = useState([]);
+  const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentHour = currentTime.getHours();
+  const currentMinute = currentTime.getMinutes();
+  const currentDecimal = currentHour + currentMinute / 60;
+  const currentDayIndex = currentTime.getDay();
+  const isWeekday = currentDayIndex >= 1 && currentDayIndex <= 5;
+  const showTimeLine = isWeekday && currentDecimal >= 8 && currentDecimal <= 19;
+  const timeLineTop = (currentDecimal - 8) * 80;
+
+  const getWeekDayDate = (dayName) => {
+    const dayIndices = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 };
+    const targetIndex = dayIndices[dayName];
+    const todayIndex = currentTime.getDay();
+    const diff = targetIndex - todayIndex;
+    const date = new Date(currentTime);
+    date.setDate(currentTime.getDate() + diff);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const isToday = (dayName) => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return dayNames[currentTime.getDay()] === dayName;
+  };
+  const [editing, setEditing] = useState(null);
+  const [dragOverCell, setDragOverCell] = useState(null);
+  const [activeDragId, setActiveDragId] = useState(null);
+
+  // Filter state
+  const [filterDegree, setFilterDegree] = useState(DEGREES[1]); // Default to 'Data Science'
+  const [filterYear, setFilterYear] = useState('4'); // Default to Year 4
+  const [filterSemester, setFilterSemester] = useState('7'); // Default to Semester 7
+
+  // Form state (used only when manually editing or manually creating via button)
+  const [form, setForm] = useState({
+    day: 'Monday',
+    start_time: '09:00 AM',
+    end_time: '10:30 AM',
+    course_id: '',
+    location: '',
+    delivery_mode: '',
+    class_type: '',
+    link: '',
+  });
+
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+  const TIMETABLE_HOURS = Array.from({ length: 11 }, (_, i) => {
+    const hour = i + 8;
+    return {
+      hour,
+      label: `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`,
+    };
+  });
+
+  useEffect(() => {
+    loadCourses();
+  }, []);
+
+  useEffect(() => {
+    loadTimetable();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterDegree, filterYear, filterSemester]);
+
+  useEffect(() => {
+    const handleGlobalMouseUp = async () => {
+      if (!activeDragId) return;
+
+      const slot = slots.find(s => s.id === activeDragId);
+      setActiveDragId(null);
+
+      if (window.isDraggingOrResizing) {
+        setTimeout(() => {
+          window.isDraggingOrResizing = false;
+        }, 50);
+      }
+
+      if (!slot) return;
+
+      const hasOverlap = checkCoreOverlap(slot.id, slot.course_id, slot.day, slot.start_time, slot.end_time);
+      if (hasOverlap) {
+        alert("Conflict: Core courses cannot overlap! Move rejected.");
+        await loadTimetable(true);
+        return;
+      }
+
+      try {
+        await updateTimetableEntry(slot.id, slot);
+        await loadTimetable(true);
+      } catch (err) {
+        console.error(err);
+        await loadTimetable(true);
+      }
+    };
+
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDragId, slots]);
+
+  async function loadCourses() {
+    try {
+      const crses = await getAllCourses();
+      setCourses(crses);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function loadTimetable(isSilent = false) {
+    if (!isSilent) {
+      setLoading(true);
+    }
+    try {
+      const data = await getTimetable(filterDegree, filterSemester, filterYear);
+      setSlots(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (!isSilent) {
+        setLoading(false);
+      }
+    }
+  }
+
+  function openCreate() {
+    setEditing(null);
+    setForm({
+      day: 'Monday',
+      start_time: '09:00 AM',
+      end_time: '10:30 AM',
+      course_id: '',
+      location: '',
+      delivery_mode: '',
+      class_type: '',
+      link: '',
+    });
+    setShowModal(true);
+  }
+
+  function openEdit(slot) {
+    setEditing(slot);
+    setForm({
+      day: slot.day,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      course_id: slot.course_id,
+      location: slot.location || '',
+      delivery_mode: slot.delivery_mode || '',
+      class_type: slot.class_type || '',
+      link: slot.link || '',
+    });
+    setShowModal(true);
+  }
+
+  async function handleSave() {
+    const hasOverlap = checkCoreOverlap(
+      editing ? editing.id : null,
+      form.course_id,
+      form.day,
+      form.start_time,
+      form.end_time
+    );
+
+    if (hasOverlap) {
+      alert("Conflict: Core courses cannot overlap! Action rejected.");
+      return;
+    }
+
+    const payload = {
+      degree: filterDegree,
+      semester: filterSemester,
+      year: filterYear,
+      day: form.day,
+      start_time: form.start_time,
+      end_time: form.end_time,
+      course_id: form.course_id,
+      location: form.delivery_mode === 'online' ? '' : form.location,
+      delivery_mode: form.delivery_mode,
+      class_type: form.class_type,
+      link: form.delivery_mode === 'online' ? form.link : '',
+    };
+
+    // Optimistic UI Update
+    const tempId = editing ? editing.id : `temp-${Date.now()}`;
+    const tempSlot = { id: tempId, ...payload };
+    if (editing) {
+      setSlots(prev => prev.map(s => s.id === editing.id ? tempSlot : s));
+    } else {
+      setSlots(prev => [...prev, tempSlot]);
+    }
+    setShowModal(false);
+
+    try {
+      if (editing) {
+        await updateTimetableEntry(editing.id, payload);
+      } else {
+        await addTimetableEntry(payload);
+      }
+      await loadTimetable(true);
+    } catch (err) {
+      console.error(err);
+      await loadTimetable(true);
+    }
+  }
+
+  async function handleDelete(slotId) {
+    showConfirm(
+      'Delete Timetable Entry',
+      'Are you sure you want to delete this class slot from the timetable?',
+      async () => {
+        // Optimistic UI Update
+        setSlots(prev => prev.filter(s => s.id !== slotId));
+        try {
+          await deleteTimetableEntry(slotId);
+          await loadTimetable(true);
+        } catch (err) {
+          console.error(err);
+          await loadTimetable(true);
+        }
+      }
+    );
+  }
+
+  // Helper converters
+  const timeToDecimal = (timeStr) => {
+    const parsed = parseCustomTime(timeStr);
+    if (!parsed) return 0;
+    return parsed.hours + parsed.minutes / 60;
+  };
+
+  const decimalToTime = (decimal) => {
+    let hours = Math.floor(decimal);
+    const minutes = Math.round((decimal - hours) * 60);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    let displayH = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+    return `${String(displayH).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
+  };
+
+  const isElective = (cId) => {
+    const course = courses.find((c) => c.course_id === cId);
+    return course?.is_elective || false;
+  };
+
+  const checkCoreOverlap = (editingId, courseId, day, startTimeStr, endTimeStr) => {
+    // If target course is elective, overlaps are allowed
+    if (isElective(courseId)) return false;
+
+    const targetStart = timeToDecimal(startTimeStr);
+    const targetEnd = timeToDecimal(endTimeStr);
+
+    return slots.some((other) => {
+      if (other.id === editingId) return false;
+      if (other.day !== day) return false;
+      
+      // If the other course is elective, overlaps are allowed
+      if (isElective(other.course_id)) return false;
+
+      // Both are core courses. Check overlapping intervals:
+      const otherStart = timeToDecimal(other.start_time);
+      const otherEnd = timeToDecimal(other.end_time);
+
+      return targetStart < otherEnd && targetEnd > otherStart;
+    });
+  };
+
+  // Filter courses suitable for selecting / dragging
+  const degreeCourses = courses.filter((c) => c.degrees?.includes(filterDegree) && c.year === filterYear);
+
+  // Group and sort slots by day
+  const slotsByDay = {};
+  DAYS.forEach(day => {
+    const daySlots = slots.filter(s => s.day === day);
+    
+    // Sort and calculate columns for overlapping slots
+    const sorted = [...daySlots].sort((a, b) => {
+      const pa = parseCustomTime(a.start_time);
+      const pb = parseCustomTime(b.start_time);
+      if (!pa || !pb) return 0;
+      return (pa.hours + pa.minutes / 60) - (pb.hours + pb.minutes / 60);
+    });
+
+    const columns = [];
+    sorted.forEach(slot => {
+      const pa = parseCustomTime(slot.start_time);
+      const pb = parseCustomTime(slot.end_time);
+      if (!pa || !pb) return;
+      const start = pa.hours + pa.minutes / 60;
+      const end = pb.hours + pb.minutes / 60;
+
+      let colIndex = 0;
+      while (colIndex < columns.length) {
+        const hasOverlap = columns[colIndex].some(other => {
+          const opa = parseCustomTime(other.start_time);
+          const opb = parseCustomTime(other.end_time);
+          if (!opa || !opb) return false;
+          const oStart = opa.hours + opa.minutes / 60;
+          const oEnd = opb.hours + opb.minutes / 60;
+          return start < oEnd && end > oStart;
+        });
+        if (!hasOverlap) break;
+        colIndex++;
+      }
+      if (!columns[colIndex]) {
+        columns[colIndex] = [];
+      }
+      columns[colIndex].push(slot);
+      slot.colIndex = colIndex;
+    });
+
+    sorted.forEach(slot => {
+      const pa = parseCustomTime(slot.start_time);
+      const pb = parseCustomTime(slot.end_time);
+      if (!pa || !pb) return;
+      const start = pa.hours + pa.minutes / 60;
+      const end = pb.hours + pb.minutes / 60;
+
+      let maxColIndex = 0;
+      sorted.forEach(other => {
+        const opa = parseCustomTime(other.start_time);
+        const opb = parseCustomTime(other.end_time);
+        if (!opa || !opb) return;
+        const oStart = opa.hours + opa.minutes / 60;
+        const oEnd = opb.hours + opb.minutes / 60;
+        if (start < oEnd && end > oStart) {
+          if (other.colIndex > maxColIndex) {
+            maxColIndex = other.colIndex;
+          }
+        }
+      });
+      slot.colCount = maxColIndex + 1;
+    });
+
+    slotsByDay[day] = sorted;
+  });
+
+  const handleDrop = async (e, day, hour, minute) => {
+    e.preventDefault();
+    setDragOverCell(null);
+    const idOrCourseId = e.dataTransfer.getData('text/plain');
+    const action = e.dataTransfer.getData('action');
+    if (!idOrCourseId) return;
+
+    const startDecimal = hour + minute / 60;
+
+    if (action === 'move') {
+      // Move existing slot
+      const slot = slots.find((s) => s.id === idOrCourseId);
+      if (!slot) return;
+
+      const duration = timeToDecimal(slot.end_time) - timeToDecimal(slot.start_time);
+      const endDecimal = startDecimal + duration;
+      
+      const startTimeStr = decimalToTime(startDecimal);
+      const endTimeStr = decimalToTime(endDecimal);
+
+      const hasOverlap = checkCoreOverlap(slot.id, slot.course_id, day, startTimeStr, endTimeStr);
+      if (hasOverlap) {
+        alert("Conflict: Core courses cannot overlap! Move rejected.");
+        return;
+      }
+
+      // Optimistic UI Update
+      const updatedSlot = {
+        ...slot,
+        day,
+        start_time: startTimeStr,
+        end_time: endTimeStr
+      };
+      setSlots(prev => prev.map(s => s.id === slot.id ? updatedSlot : s));
+
+      try {
+        await updateTimetableEntry(slot.id, updatedSlot);
+        await loadTimetable(true);
+      } catch (err) {
+        console.error(err);
+        await loadTimetable(true);
+      }
+    } else {
+      // Add new course from sidebar directly
+      const courseId = idOrCourseId;
+      const endDecimal = startDecimal + 1.0;
+      
+      const startTimeStr = decimalToTime(startDecimal);
+      const endTimeStr = decimalToTime(endDecimal);
+
+      const hasOverlap = checkCoreOverlap(null, courseId, day, startTimeStr, endTimeStr);
+      if (hasOverlap) {
+        alert("Conflict: Core courses cannot overlap! Placement rejected.");
+        return;
+      }
+
+      const payload = {
+        degree: filterDegree,
+        semester: filterSemester,
+        year: filterYear,
+        day,
+        start_time: startTimeStr,
+        end_time: endTimeStr,
+        course_id: courseId,
+        location: '',
+      };
+
+      // Optimistic UI Update
+      const tempId = `temp-${Date.now()}`;
+      const tempSlot = { id: tempId, ...payload };
+      setSlots(prev => [...prev, tempSlot]);
+
+      try {
+        await addTimetableEntry(payload);
+        await loadTimetable(true);
+      } catch (err) {
+        console.error(err);
+        await loadTimetable(true);
+      }
+    }
+  };
+
+  const handleResizeStart = (e, slot) => {
+    e.stopPropagation();
+    e.preventDefault();
+    window.isDraggingOrResizing = true;
+    const startY = e.clientY;
+    const startDec = timeToDecimal(slot.start_time);
+    const initEndDec = timeToDecimal(slot.end_time);
+
+    const handleMouseMove = (moveEvent) => {
+      moveEvent.preventDefault();
+    };
+
+    const handleMouseUp = async (upEvent) => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+
+      setTimeout(() => {
+        window.isDraggingOrResizing = false;
+      }, 50);
+
+      const deltaY = upEvent.clientY - startY;
+      const deltaDec = Math.round(deltaY / 20) * 0.25;
+      let newEndDec = initEndDec + deltaDec;
+
+      if (newEndDec <= startDec + 0.25) {
+        newEndDec = startDec + 0.25;
+      }
+      if (newEndDec > 19) {
+        newEndDec = 19;
+      }
+
+      const newEndTimeStr = decimalToTime(newEndDec);
+      if (newEndTimeStr === slot.end_time) return;
+
+      const hasOverlap = checkCoreOverlap(slot.id, slot.course_id, slot.day, slot.start_time, newEndTimeStr);
+      if (hasOverlap) {
+        alert("Conflict: Core courses cannot overlap! Resizing rejected.");
+        return;
+      }
+
+      // Optimistic UI Update
+      const updatedSlot = { ...slot, end_time: newEndTimeStr };
+      setSlots(prev => prev.map(s => s.id === slot.id ? updatedSlot : s));
+
+      try {
+        await updateTimetableEntry(slot.id, updatedSlot);
+        await loadTimetable(true);
+      } catch (err) {
+        console.error(err);
+        await loadTimetable(true);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Toolbar / Filters */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--color-surface-container-low)] p-3 rounded-2xl border border-[var(--color-surface-container)]">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-[var(--color-on-surface-variant)]">Degree:</span>
+            <select
+              value={filterDegree}
+              onChange={(e) => setFilterDegree(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-medium bg-[var(--color-surface-container-lowest)] rounded-lg text-[var(--color-on-surface)] border border-[var(--color-surface-container)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none cursor-pointer"
+            >
+              {DEGREES.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-[var(--color-on-surface-variant)]">Year:</span>
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-medium bg-[var(--color-surface-container-lowest)] rounded-lg text-[var(--color-on-surface)] border border-[var(--color-surface-container)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none cursor-pointer"
+            >
+              <option value="1">Year 1</option>
+              <option value="2">Year 2</option>
+              <option value="3">Year 3</option>
+              <option value="4">Year 4</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-[var(--color-on-surface-variant)]">Semester:</span>
+            <select
+              value={filterSemester}
+              onChange={(e) => setFilterSemester(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-medium bg-[var(--color-surface-container-lowest)] rounded-lg text-[var(--color-on-surface)] border border-[var(--color-surface-container)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none cursor-pointer"
+            >
+              {['1', '2', '3', '4', '5', '6', '7', '8'].map((sem) => (
+                <option key={sem} value={sem}>Semester {sem}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <Button size="sm" onClick={openCreate}>
+          <Plus className="w-3.5 h-3.5" />
+          Add Class Slot
+        </Button>
+      </div>
+
+      {/* Main Layout: Grid + Sidebar */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        
+        {/* Timetable Grid */}
+        <div className="flex-1 w-full bg-[var(--color-surface-container-lowest)] rounded-3xl p-5 shadow-[var(--shadow-soft)] border border-[var(--color-surface-container)] flex flex-col overflow-hidden">
+          {loading ? (
+            <div className="h-[600px] flex items-center justify-center">
+              <span className="text-sm text-[var(--color-on-surface-variant)] animate-pulse font-medium">Loading timetable slots...</span>
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto custom-scrollbar">
+              <div className="min-w-[750px] flex flex-col">
+                
+                {/* Day Columns Headers */}
+                <div className="grid grid-cols-[70px_repeat(5,1fr)] border-b border-[var(--color-surface-container)]">
+                  <div className="py-2.5" />
+                  {DAYS.map((day) => {
+                    const today = isToday(day);
+                    return (
+                      <div 
+                        key={day} 
+                        className={`py-2 text-center border-l border-[var(--color-surface-container)] transition-all flex flex-col items-center justify-center ${
+                          today ? 'bg-[var(--color-primary)]/[0.04] border-b-2 border-b-[var(--color-primary)]' : ''
+                        }`}
+                      >
+                        <span className={`text-xs font-bold ${today ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface)]'}`}>
+                          {day}
+                        </span>
+                        <span className="text-[9px] text-[var(--color-outline)] font-semibold mt-0.5">
+                          {getWeekDayDate(day)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Grid Body */}
+                <div className="grid grid-cols-[70px_1fr] relative h-[880px]">
+                  {/* Hours Labels */}
+                  <div className="flex flex-col select-none">
+                    {TIMETABLE_HOURS.map((slot) => (
+                      <div key={slot.hour} className="h-20 flex items-start justify-end pr-3 pt-1 border-b border-[var(--color-surface-container)]">
+                        <span className="text-[10px] text-[var(--color-outline-variant)] font-bold">
+                          {slot.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Day Grid Columns */}
+                  <div className="grid grid-cols-5 relative h-full border-r border-[var(--color-surface-container)]">
+                    {showTimeLine && (
+                      <div 
+                        className="absolute left-0 right-0 border-t-2 border-[var(--color-primary)] z-20 flex items-center pointer-events-none"
+                        style={{ top: `${timeLineTop}px` }}
+                      >
+                        <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)] -ml-1.25 shadow-[0_0_8px_var(--color-primary)]" />
+                        <div className="bg-[var(--color-primary)] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-md -mt-4.5 ml-1">
+                          {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                    )}
+                    {DAYS.map((day) => {
+                      const daySlots = slotsByDay[day] || [];
+                      const today = isToday(day);
+                      return (
+                        <div 
+                          key={day} 
+                          className={`relative h-full border-l border-[var(--color-surface-container)] transition-all ${
+                            today ? 'bg-[var(--color-primary)]/[0.015]' : ''
+                          }`}
+                        >
+                          
+                          {/* 15-Minute Drop Cell Grid */}
+                          {TIMETABLE_HOURS.map((hourSlot) => {
+                            return [0, 15, 30, 45].map((minute) => {
+                              const isOver = dragOverCell === `${day}-${hourSlot.hour}-${minute}`;
+                              const isHourBoundary = minute === 45;
+                              return (
+                                <div
+                                  key={`${day}-${hourSlot.hour}-${minute}`}
+                                  onMouseEnter={() => {
+                                    if (!activeDragId) return;
+                                    window.isDraggingOrResizing = true;
+                                    const slot = slots.find((s) => s.id === activeDragId);
+                                    if (!slot) return;
+
+                                    const startDecimal = hourSlot.hour + minute / 60;
+                                    const duration = timeToDecimal(slot.end_time) - timeToDecimal(slot.start_time);
+                                    const endDecimal = startDecimal + duration;
+
+                                    const startTimeStr = decimalToTime(startDecimal);
+                                    const endTimeStr = decimalToTime(endDecimal);
+
+                                    setSlots(prev => prev.map(s => s.id === slot.id ? {
+                                      ...s,
+                                      day,
+                                      start_time: startTimeStr,
+                                      end_time: endTimeStr
+                                    } : s));
+                                  }}
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setDragOverCell(`${day}-${hourSlot.hour}-${minute}`);
+                                  }}
+                                  onDragLeave={() => setDragOverCell(null)}
+                                  onDrop={(e) => handleDrop(e, day, hourSlot.hour, minute)}
+                                  className={`relative transition-all duration-150 cursor-crosshair ${
+                                    isOver ? 'bg-[var(--color-primary)]/15 border-2 border-dashed border-[var(--color-primary)]/50 z-10' : 'hover:bg-[var(--color-surface-container-low)]/50'
+                                  } ${
+                                    isHourBoundary 
+                                      ? 'border-b border-[var(--color-surface-container)]' 
+                                      : 'border-b border-dashed border-[var(--color-surface-container)]/15'
+                                  }`}
+                                  style={{ height: '20px' }}
+                                />
+                              );
+                            });
+                          })}
+
+                          {/* Placed Timetable Cards */}
+                          {daySlots.map((slot) => {
+                            const parsedStart = parseCustomTime(slot.start_time);
+                            const parsedEnd = parseCustomTime(slot.end_time);
+                            if (!parsedStart || !parsedEnd) return null;
+
+                            const startDecimal = parsedStart.hours + parsedStart.minutes / 60;
+                            const endDecimal = parsedEnd.hours + parsedEnd.minutes / 60;
+
+                            // Bound to 8 AM to 7 PM
+                            if (startDecimal < 8 || endDecimal > 19) return null;
+
+                            const top = (startDecimal - 8) * 80;
+                            const height = Math.max(30, (endDecimal - startDecimal) * 80);
+
+                            const colCount = slot.colCount || 1;
+                            const colIndex = slot.colIndex || 0;
+                            const width = 100 / colCount;
+                            const left = colIndex * width;
+
+                            const courseInfo = courses.find((c) => c.course_id === slot.course_id);
+                            const courseName = courseInfo?.aliases?.[0] || '';
+                            const colors = getCourseColor(slot.course_id);
+
+                            return (
+                              <div
+                                key={slot.id}
+                                onMouseDown={(e) => {
+                                  if (e.button !== 0) return;
+                                  window.isDraggingOrResizing = false;
+                                  setActiveDragId(slot.id);
+                                }}
+                                onClick={() => {
+                                  if (window.isDraggingOrResizing) return;
+                                  openEdit(slot);
+                                }}
+                                className="absolute px-2.5 py-1.5 rounded-xl text-xs font-semibold overflow-hidden transition-all border flex flex-col justify-start items-start text-left hover:scale-[1.01] hover:shadow-md cursor-grab active:cursor-grabbing group"
+                                style={{
+                                  top: `${top}px`,
+                                  height: `${height}px`,
+                                  left: `calc(${left}% + 3px)`,
+                                  width: `calc(${width}% - 6px)`,
+                                  zIndex: 5,
+                                  backgroundColor: colors.bg,
+                                  borderColor: colors.border,
+                                  color: colors.text,
+                                }}
+                              >
+                                <div className="absolute left-0 top-0 w-1 h-full" style={{ backgroundColor: colors.bar }} />
+                                <div className="flex items-start justify-between w-full pl-1.5 gap-1">
+                                  <span className="font-bold truncate flex-1 transition-colors">
+                                    {slot.course_id}
+                                    {slot.class_type && ` (${capitalize(slot.class_type)})`}
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDelete(slot.id);
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 hover:text-red-400 p-0.5 rounded transition-all shrink-0 cursor-pointer"
+                                    title="Delete slot"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                {courseName && (
+                                  <span className="text-[10px] opacity-90 block truncate w-full pl-1.5 font-semibold">
+                                    {courseName}
+                                  </span>
+                                )}
+
+                                {height >= 48 && (
+                                  <span className="text-[9px] opacity-80 block truncate mt-0.5 w-full pl-1.5">
+                                    {slot.start_time} - {slot.end_time}
+                                  </span>
+                                )}
+
+                                {height >= 48 && (
+                                  <>
+                                    {slot.delivery_mode === 'online' && slot.link ? (
+                                      <a
+                                        href={slot.link.startsWith('http') ? slot.link : `https://${slot.link}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-auto mb-1 w-full py-1 rounded text-white text-[9px] font-bold text-center flex items-center justify-center gap-0.5 hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer z-10"
+                                        style={{ backgroundColor: colors.bar }}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Link2 className="w-3 h-3 shrink-0 text-white" />
+                                        Join Class
+                                      </a>
+                                    ) : slot.location ? (
+                                      <span className="text-[10px] opacity-85 block truncate mt-1 w-full pl-1.5 flex items-center gap-0.5 font-semibold">
+                                        <MapPin className="w-3.5 h-3.5 shrink-0" />
+                                        {slot.location}
+                                      </span>
+                                    ) : null}
+                                  </>
+                                )}
+
+                                {/* Resize Handle bottom */}
+                                <div
+                                  className="absolute bottom-0 left-0 w-full h-2.5 cursor-ns-resize hover:bg-[var(--color-primary)]/30 transition-colors z-20"
+                                  onMouseDown={(e) => handleResizeStart(e, slot)}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                            );
+                          })}
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar: Course List */}
+        <div className="w-full lg:w-72 bg-[var(--color-surface-container-low)] rounded-3xl p-5 border border-[var(--color-surface-container)] flex flex-col gap-4 shrink-0 lg:sticky lg:top-6">
+          <div>
+            <h3 className="font-bold text-sm text-[var(--color-on-surface)] flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-[var(--color-primary)]" />
+              Available Courses
+            </h3>
+            <p className="text-[10px] text-[var(--color-outline)] mt-1">
+              Drag course cards and drop them onto grid time slots to schedule. Drag existing slots to reschedule. Resize cards from the bottom edge. Snaps to 15 mins.
+            </p>
+          </div>
+
+          <div className="flex-1 max-h-[500px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+            {degreeCourses.length === 0 ? (
+              <div className="py-8 text-center text-[var(--color-outline)] opacity-70">
+                <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <span className="text-xs">No courses matching selected Year/Degree</span>
+              </div>
+            ) : (
+              degreeCourses.map((course) => {
+                const colors = getCourseColor(course.course_id);
+                return (
+                  <div
+                    key={course.course_id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', course.course_id);
+                    }}
+                    className="p-3 border rounded-xl cursor-grab active:cursor-grabbing transition-all select-none flex flex-col gap-1 hover:shadow-sm relative overflow-hidden"
+                    style={{
+                      backgroundColor: colors.bg,
+                      borderColor: colors.border,
+                      color: colors.text,
+                    }}
+                    title="Drag me to the calendar!"
+                  >
+                    <div className="absolute left-0 top-0 w-1 h-full" style={{ backgroundColor: colors.bar }} />
+                    <span className="font-bold text-xs flex items-center justify-between pl-1">
+                      <span>{course.course_id}</span>
+                      {course.is_elective && (
+                        <span className="text-[8px] bg-amber-500/10 text-amber-500 border border-amber-500/20 px-1 py-0.2 rounded font-bold">
+                          ELECTIVE
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-[10px] opacity-85 truncate pl-1 font-semibold">
+                      {course.aliases?.[0] || 'No Alias'}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Modal Form */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editing ? 'Edit Class Slot' : 'New Class Slot'}
+      >
+        <div className="space-y-4">
+          <Select
+            id="slot-day"
+            label="Day of Week"
+            value={form.day}
+            onChange={(e) => setForm({ ...form, day: e.target.value })}
+            options={[
+              { value: 'Monday', label: 'Monday' },
+              { value: 'Tuesday', label: 'Tuesday' },
+              { value: 'Wednesday', label: 'Wednesday' },
+              { value: 'Thursday', label: 'Thursday' },
+              { value: 'Friday', label: 'Friday' },
+            ]}
+          />
+
+          <Select
+            id="slot-course"
+            label="Course"
+            value={form.course_id}
+            onChange={(e) => setForm({ ...form, course_id: e.target.value })}
+            placeholder="Select course"
+            options={degreeCourses.map((c) => ({
+              value: c.course_id,
+              label: `${c.course_id} — ${c.aliases?.[0] || c.course_id}`,
+            }))}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              id="slot-start"
+              label="Start Time (e.g. 09:00 AM)"
+              value={form.start_time}
+              onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+            />
+            <Input
+              id="slot-end"
+              label="End Time (e.g. 10:30 AM)"
+              value={form.end_time}
+              onChange={(e) => setForm({ ...form, end_time: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              id="slot-delivery-mode"
+              label="Delivery Mode (Optional)"
+              value={form.delivery_mode}
+              onChange={(e) => setForm({ ...form, delivery_mode: e.target.value })}
+              options={[
+                { value: '', label: 'Not Specified' },
+                { value: 'onsite', label: 'Onsite' },
+                { value: 'online', label: 'Online' },
+              ]}
+            />
+            <Select
+              id="slot-class-type"
+              label="Class Type (Optional)"
+              value={form.class_type}
+              onChange={(e) => setForm({ ...form, class_type: e.target.value })}
+              options={[
+                { value: '', label: 'Not Specified' },
+                { value: 'lecture', label: 'Lecture' },
+                { value: 'tutorial', label: 'Tutorial' },
+              ]}
+            />
+          </div>
+
+          {form.delivery_mode === 'online' ? (
+            <Input
+              id="slot-link"
+              label="Online Class Link (Optional)"
+              placeholder="e.g. zoom.us/j/123456"
+              value={form.link}
+              onChange={(e) => setForm({ ...form, link: e.target.value })}
+            />
+          ) : (
+            <Input
+              id="slot-location"
+              label="Location/Room (Optional)"
+              placeholder="e.g. Room 204"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+            />
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={!form.course_id || !form.start_time || !form.end_time}
+            >
+              {editing ? 'Update' : 'Create'} Slot
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+

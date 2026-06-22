@@ -5,10 +5,17 @@ import {
   isToday,
   isSameDay,
 } from 'date-fns';
-import { getEventTypeColor } from '../../utils/helpers';
+import { getEventTypeColor, parseCustomTime } from '../../utils/helpers';
 import { TIME_SLOTS } from '../../utils/constants';
 
-export default function WeekView({ currentDate, events, onEventClick, onDayClick }) {
+export default function WeekView({
+  currentDate,
+  events,
+  onEventClick,
+  onDayClick,
+  showShadow = false,
+  timetableSlots = []
+}) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -91,6 +98,7 @@ export default function WeekView({ currentDate, events, onEventClick, onDayClick
               const key = format(day, 'yyyy-MM-dd');
               const dayEvents = eventsByDay[key] || [];
               const today = isToday(day);
+              const dayName = format(day, 'EEEE');
               
               // Slotted events are between 6 AM and 8 PM
               const slottedEvents = dayEvents.filter((e) => {
@@ -157,6 +165,11 @@ export default function WeekView({ currentDate, events, onEventClick, onDayClick
                 event.colCount = maxColIndex + 1;
               });
 
+              // Filter timetable slots for this day name
+              const dayTimetableSlots = showShadow
+                ? timetableSlots.filter((slot) => slot.day === dayName)
+                : [];
+
               return (
                 <div
                   key={key}
@@ -174,6 +187,48 @@ export default function WeekView({ currentDate, events, onEventClick, onDayClick
                     />
                   ))}
 
+                  {/* Timetable Shadow Slots */}
+                  {dayTimetableSlots.map((slot) => {
+                    const parsedStart = parseCustomTime(slot.start_time);
+                    const parsedEnd = parseCustomTime(slot.end_time);
+                    if (!parsedStart || !parsedEnd) return null;
+
+                    const startDecimal = parsedStart.hours + parsedStart.minutes / 60;
+                    const endDecimal = parsedEnd.hours + parsedEnd.minutes / 60;
+
+                    // Bound to 6 AM to 8 PM
+                    if (startDecimal < 6 || endDecimal > 20) return null;
+
+                    const top = (startDecimal - 6) * 80;
+                    const height = (endDecimal - startDecimal) * 80;
+
+                    return (
+                      <div
+                        key={slot.id}
+                        className="absolute border border-dashed border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5 rounded-lg pointer-events-none flex flex-col justify-between p-1.5 overflow-hidden text-[10px] font-bold text-[var(--color-primary)]/60"
+                        style={{
+                          top: `${top}px`,
+                          height: `${height}px`,
+                          left: '3px',
+                          width: 'calc(100% - 6px)',
+                          zIndex: 2,
+                        }}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="truncate">{slot.course_id}</span>
+                          <span className="text-[9px] opacity-75 font-normal truncate">
+                            {slot.start_time} - {slot.end_time}
+                          </span>
+                        </div>
+                        {slot.location && (
+                          <span className="text-[8px] opacity-75 font-semibold text-right truncate">
+                            {slot.location}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+
                   {/* Absolute Positioned Events */}
                   {sortedSlotted.map((event) => {
                     const d = event.date?.toDate ? event.date.toDate() : new Date(event.date);
@@ -190,24 +245,45 @@ export default function WeekView({ currentDate, events, onEventClick, onDayClick
                     const left = colIndex * width;
                     
                     const colors = getEventTypeColor(event.type);
+
+                    // Check for collision with any timetable slot of this day
+                    const hasTimetableCollision = showShadow && dayTimetableSlots.some((slot) => {
+                      const parsedStart = parseCustomTime(slot.start_time);
+                      const parsedEnd = parseCustomTime(slot.end_time);
+                      if (!parsedStart || !parsedEnd) return false;
+
+                      const slotStart = parsedStart.hours + parsedStart.minutes / 60;
+                      const slotEnd = parsedEnd.hours + parsedEnd.minutes / 60;
+
+                      return start < slotEnd && end > slotStart;
+                    });
                     
                     return (
                       <button
                         key={event.id}
                         onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
-                        className="absolute px-2 py-1.5 rounded-lg text-xs font-semibold overflow-hidden transition-all duration-150 hover:scale-[1.01] hover:shadow-md cursor-pointer border flex flex-col justify-start items-start text-left"
+                        className={`absolute px-2 py-1.5 rounded-lg text-xs font-semibold overflow-hidden transition-all duration-150 hover:scale-[1.01] hover:shadow-md cursor-pointer border flex flex-col justify-start items-start text-left ${
+                          hasTimetableCollision ? 'ring-2 ring-red-500 border-red-500 shadow-lg shadow-red-500/20' : ''
+                        }`}
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
                           left: `calc(${left}% + 3px)`,
                           width: `calc(${width}% - 6px)`,
-                          backgroundColor: colors.bg,
-                          borderColor: colors.border,
-                          color: colors.text,
+                          backgroundColor: hasTimetableCollision ? 'rgba(254, 226, 226, 0.95)' : colors.bg,
+                          borderColor: hasTimetableCollision ? '#ef4444' : colors.border,
+                          color: hasTimetableCollision ? '#b91c1c' : colors.text,
                           zIndex: 5,
                         }}
                       >
-                        <span className="font-bold block truncate w-full">{event.title}</span>
+                        <div className="font-bold flex items-center justify-between gap-1 w-full">
+                          <span className="truncate flex-1">{event.title}</span>
+                          {hasTimetableCollision && (
+                            <span className="text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded font-black shrink-0 tracking-wider">
+                              OVERLAP
+                            </span>
+                          )}
+                        </div>
                         {height >= 55 && (
                           <span className="text-[10px] opacity-75 block truncate mt-0.5 w-full">
                             {format(d, 'h:mm a')} - {ed ? format(ed?.toDate ? ed.toDate() : new Date(ed), 'h:mm a') : format(new Date(d.getTime() + 60*60*1000), 'h:mm a')}

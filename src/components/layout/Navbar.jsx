@@ -7,6 +7,7 @@ import {
   Shield,
   MessageSquare,
   Sparkles,
+  Clock,
 } from 'lucide-react';
 import { useState } from 'react';
 import AddEventModal from '../events/AddEventModal';
@@ -25,6 +26,7 @@ export default function Navbar() {
 
   const navLinks = [
     { to: '/dashboard', label: 'Dashboard', icon: Calendar },
+    ...(currentUser ? [{ to: '/timetable', label: 'Timetable', icon: Clock }] : []),
     ...(currentUser ? [{ to: '/chat', label: 'AI Assistant', icon: MessageSquare }] : []),
     ...(currentUser ? [{ to: '/setup', label: 'Electives', icon: Settings }] : []),
     ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: Shield }] : []),

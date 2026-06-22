@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useEvents } from '../contexts/EventsContext';
@@ -9,6 +9,7 @@ import EventDetailModal from '../components/calendar/EventDetailModal';
 import AddEventModal from '../components/events/AddEventModal';
 import { CALENDAR_VIEWS, DEGREES } from '../utils/constants';
 import Select from '../components/ui/Select';
+import { getTimetable } from '../lib/firestore';
 import DayViewDrawer from '../components/calendar/DayViewDrawer';
 import {
   startOfWeek,
@@ -24,8 +25,8 @@ import {
 import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { currentUser } = useAuth();
-  const { events, courseMap, loading, publicDegree, setPublicDegree } = useEvents();
+  const { currentUser, userProfile } = useAuth();
+  const { events, courseMap, loading, publicDegree, setPublicDegree, semesterSettings } = useEvents();
 
   const [view, setView] = useState(CALENDAR_VIEWS.MONTH);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -35,8 +36,35 @@ export default function DashboardPage() {
   
   const [dayDrawerOpen, setDayDrawerOpen] = useState(false);
   const [dayDrawerData, setDayDrawerData] = useState({ date: null, events: [] });
+  const [showShadow, setShowShadow] = useState(false);
+  const [timetableSlots, setTimetableSlots] = useState([]);
 
   const navigate = useNavigate();
+
+  // Fetch timetable slots for shadow overlay
+  useEffect(() => {
+    async function loadShadowTimetable() {
+      if (!currentUser || !userProfile?.degree || !semesterSettings) return;
+      
+      // Compute year
+      let computedYear = '3';
+      if (userProfile.batch && semesterSettings.batch_year) {
+        const studentStart = parseInt(userProfile.batch.split('/')[0], 10);
+        const systemStart = parseInt(semesterSettings.batch_year.split('/')[0], 10);
+        if (!isNaN(studentStart) && !isNaN(systemStart)) {
+          computedYear = String(Math.max(3, Math.min(4, 4 - (studentStart - systemStart))));
+        }
+      }
+      
+      try {
+        const data = await getTimetable(userProfile.degree, semesterSettings.current_semester, computedYear);
+        setTimetableSlots(data);
+      } catch (err) {
+        console.error('Failed to load shadow timetable:', err);
+      }
+    }
+    loadShadowTimetable();
+  }, [currentUser, userProfile, semesterSettings]);
 
   function goToday() { setCurrentDate(new Date()); }
   function goPrev() {
@@ -126,6 +154,25 @@ export default function DashboardPage() {
               />
 
               {/* Calendar Grid */}
+              {view === CALENDAR_VIEWS.WEEK && currentUser && (
+                <div className="flex justify-end items-center gap-2 max-w-fit ml-auto border border-[var(--color-surface-container)] bg-[var(--color-surface-container-low)]/40 p-1.5 rounded-full animate-fade-in mb-2 shadow-sm">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-on-surface-variant)] px-2">Show Timetable Shadow</span>
+                  <button
+                    onClick={() => setShowShadow(!showShadow)}
+                    className={`
+                      w-10 h-6 rounded-full transition-colors relative cursor-pointer
+                      ${showShadow ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-surface-container-high)]'}
+                    `}
+                  >
+                    <div 
+                      className={`
+                        w-4 h-4 rounded-full bg-white absolute top-1 transition-all
+                        ${showShadow ? 'left-5' : 'left-1'}
+                      `}
+                    />
+                  </button>
+                </div>
+              )}
               <div className="animate-fade-in flex-1 min-h-0 flex flex-col h-full overflow-hidden" style={{ animationDelay: '0.1s' }}>
                 {view === CALENDAR_VIEWS.MONTH ? (
                   <MonthView
@@ -142,6 +189,8 @@ export default function DashboardPage() {
                     courseMap={courseMap}
                     onEventClick={setSelectedEvent}
                     onDayClick={handleDayClick}
+                    showShadow={showShadow}
+                    timetableSlots={timetableSlots}
                   />
                 )}
               </div>

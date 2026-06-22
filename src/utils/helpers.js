@@ -85,6 +85,40 @@ export function getEventTypeColor(type) {
   }
 }
 
+export function getCourseColor(courseId) {
+  if (!courseId) return { bg: 'var(--color-primary-container)/10', border: 'var(--color-primary-container)/20', text: 'var(--color-primary)', bar: 'var(--color-primary)' };
+
+  let hash = 0;
+  for (let i = 0; i < courseId.length; i++) {
+    hash = courseId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  // Predefined beautiful hues to keep the calendar harmonious
+  const hues = [
+    215, // Soft Blue
+    150, // Emerald Green
+    345, // Rose Pink
+    40,  // Warm Amber
+    275, // Rich Purple
+    25,  // Bright Orange
+    175, // Deep Teal
+    200, // Sky Blue
+    90,  // Lime/Olive Green
+    315, // Violet Pink
+  ];
+
+  const hue = hues[Math.abs(hash) % hues.length];
+
+  return {
+    bg: `hsla(${hue}, 85%, 96%, 0.85)`,
+    border: `hsla(${hue}, 70%, 80%, 0.5)`,
+    text: `hsl(${hue}, 75%, 32%)`,
+    bar: `hsl(${hue}, 75%, 42%)`,
+    hoverText: `hsl(${hue}, 80%, 22%)`,
+  };
+}
+
+
 
 // Capitalize words and format underscores/spaces
 export function capitalize(str) {

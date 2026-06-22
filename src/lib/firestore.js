@@ -587,4 +587,42 @@ export async function progressStudentsToNextSemester(newSemester) {
   await Promise.all(promises);
 }
 
+// ========================
+// TIMETABLES
+// ========================
+
+export async function getTimetable(degree, semester, year) {
+  const q = query(
+    collection(db, 'timetables'),
+    where('degree', '==', degree),
+    where('semester', '==', semester),
+    where('year', '==', year)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function addTimetableEntry(entry) {
+  const ref = await addDoc(collection(db, 'timetables'), {
+    degree: entry.degree,
+    semester: entry.semester,
+    year: entry.year,
+    day: entry.day, // 'Monday', 'Tuesday', etc.
+    start_time: entry.start_time, // e.g. "09:00 AM" or "09:00"
+    end_time: entry.end_time, // e.g. "10:30 AM" or "10:30"
+    course_id: entry.course_id,
+    location: entry.location || '',
+  });
+  return ref.id;
+}
+
+export async function updateTimetableEntry(id, data) {
+  await updateDoc(doc(db, 'timetables', id), data);
+}
+
+export async function deleteTimetableEntry(id) {
+  await deleteDoc(doc(db, 'timetables', id));
+}
+
+
 
